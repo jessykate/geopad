@@ -1,0 +1,12 @@
+{
+  "name": "geopad-server",
+  "version": "0.0.1",
+  "dependencies": {
+    "express": "3.x",
+    "pg": "2.0.0",
+    "socket.io": "0.9.16",
+    "jade": "0.31.2",
+    "connect": "~2.7.11",
+    "date-utils": "~1.2.13"
+  }
+}

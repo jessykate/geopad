@@ -1,0 +1,9 @@
+.pad-meta-data 
+	span #{pad.radius} m 
+	if pad.expiry 
+		/ Expires #{pad.expiry}
+
+	h3.fog-meta-name.subheading
+		a.foglink(href="/pad/" + pad.id) #{pad.name}
+		
+	hr
