@@ -22,6 +22,8 @@ block content
 block script
     script.
         var socket = io.connect('http://localhost:3000'); 
+        socket.emit('join', "#{pad.uuid}");
+
         socket.on('newpost-notify', function (data) {
             $("#postlist").prepend(data);
             // reset the form values 
@@ -42,14 +44,10 @@ block script
                 contentType: "application/json",
                 url: "/api/post/new/",
             });
-            request.done(function(msg, status) {
-                console.log("response received with status code " + status);
-                console.log(msg);
-            });
             request.fail(function(msg) {
                 console.log("error:")
                 console.log(msg);
-                $("#pad-error").html(msg.responseText);			
+                $("#post-error").html(msg.responseText);			
             });
 
             return false;

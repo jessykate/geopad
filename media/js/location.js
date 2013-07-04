@@ -14,18 +14,14 @@ geo_success = function(position) {
 	}
 	username = localStorage["geopad_username"];
 
-	// once we know location, retrieve the relevant pads
+	// once we know location, retrieve the relevant pads (response is sent via
+	// sockets, not ajax, so there is no response code here.)
 	request = $.ajax({
 		data: {user_lat: user_lat, user_long: user_long},
 		type: "GET",
 		contentType: "application/json",
 		url: "/api/pads/nearby/"
 	});
-	request.done(function(msg, status) {
-		console.log("nearby pads:")
-		console.log(msg);
-		$("#padlist").html(msg);
-	})
 };
 
 geo_error = function(error) {

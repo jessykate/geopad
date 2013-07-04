@@ -6,3 +6,20 @@ block content
         #pad-error			
         #padlist Searching for nearby pads...
 
+block script
+    script.
+        socket = io.connect('http://localhost:3000'); 
+        socket.emit('join', 'home');
+        socket.on('padlist', function (data) {
+            console.log('retrieved list of pads.');
+            $("#padlist").html(data);
+        });
+
+        socket.on('newpad-notify', function (data) {
+            console.log(data);
+            $("#padlist").append(data);
+            // reset the form values 
+            $("input#name").val("");
+            $("input#radius").val("");
+            $("input#expiry").val("");
+        });

@@ -8,7 +8,6 @@ html
     script(type="text/javascript", src="/js/vendor/underscore.js")
     script(type="text/javascript", src="/js/vendor/bootstrap.js")
     script(type="text/javascript", src="/socket.io/socket.io.js")
-
     script(type="text/javascript", src="/js/location.js")
 
     body
@@ -20,6 +19,11 @@ html
                 h3.subheading
                     img.header-logo(src="/img/Location-Icon.jpeg") .
                     | Location-specific notepads shared with people nearby.
+                p
+                    span.text-error Warning! 
+                    span.text-warning.
+                        This is in-progress software. Database will be deleted
+                        frequently and with no warning. Use for testing only. 
 
                 block content
 
@@ -33,14 +37,6 @@ html
                     input.btn(type="submit") Create
 
         script.
-            var socket = io.connect('http://localhost:3000'); 
-            socket.on('newpad-notify', function (data) {
-                $("#padlist").append(data);
-                // reset the form values 
-                $("input#name").val("");
-                $("input#radius").val("");
-                $("input#expiry").val("");
-            });
 
             $("#newpad").submit(function() {		
                 formdata = {
@@ -58,10 +54,6 @@ html
                     type: "GET",
                     contentType: "application/json",
                     url: "/api/pad/new/",
-                });
-                request.done(function(msg, status) {
-                    console.log("response received with status code " + status);
-                    console.log(msg);
                 });
                 request.fail(function(msg) {
                     console.log("error:")
