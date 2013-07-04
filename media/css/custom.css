@@ -36,6 +36,11 @@ body {
 	font-size: 15px;
 }
 
+#homelink {
+	text-decoration: none;
+	color: inherit;
+}
+
 h1,h2 {
 	font-family: 'Lato', sans-serif;
 }

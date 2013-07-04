@@ -1,0 +1,57 @@
+extends ../layout
+
+block content
+
+    #container
+        h1 #{pad.name} 
+        .pad-meta-data 
+            span #{pad.radius} m 
+            if pad.expiry 
+                / Expires #{pad.expiry}
+
+        form#newpost(action="/api/post/new/", method="GET")
+            textarea#post-body
+            input#pad-uuid(type="hidden", name="uuid", value="#{pad.uuid}") 
+            input.btn(type="submit", value="Post")
+
+        #post-error
+        #postlist
+        for post in posts
+            include ../snippets/post_detail
+
+block script
+    script.
+        var socket = io.connect('http://localhost:3000'); 
+        socket.on('newpost-notify', function (data) {
+            $("#postlist").prepend(data);
+            // reset the form values 
+            $("textarea#post-body").val("");
+        });
+
+        $("#newpost").submit(function() {		
+            formdata = {
+                pad_id: $("input#pad-uuid").val(),
+                post_body: $("textarea#post-body").val()
+            };
+            console.log("form data:");
+            console.log(formdata);
+
+            request = $.ajax({
+                data: decodeURIComponent($.param(formdata)),
+                type: "GET",
+                contentType: "application/json",
+                url: "/api/post/new/",
+            });
+            request.done(function(msg, status) {
+                console.log("response received with status code " + status);
+                console.log(msg);
+            });
+            request.fail(function(msg) {
+                console.log("error:")
+                console.log(msg);
+                $("#pad-error").html(msg.responseText);			
+            });
+
+            return false;
+        });
+

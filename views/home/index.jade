@@ -1,59 +1,8 @@
 extends ../layout
 
 block content
-	// Wrap all page content here
-	#wrap
-		.container#page-content
-			h1#app-name-header Geopad
-			h3.subheading
-				img.header-logo(src="/img/Location-Icon.jpeg") .
-				| Location-specific notepads shared with people nearby.
-			
-			#container
-				#pad-error			
-				#padlist Searching for nearby pads...
-					
-			#footer.navbar-fixed-bottom
-				.container
-					h3.subheading I Want a New One!
-					form#newpad(action="/api/pad/new/", method="GET")
-						input.newfog-input-name#name(type="text", name="name", placeholder="Pad Name")
-						input.newfog-input-radius#radius(type="number", name="radius", placeholder="Radius (meters)")
-						input.newfog-input-expiry#expiry(type="number", name="expiry", placeholder="Expiry (hours)")
-						input.btn(type="submit") Create
 
-	script.
-		$("#newpad").submit(function() {		
-			formdata = {
-				pad_name: $("input#name").val(),
-				pad_radius: $("input#radius").val(),
-				pad_expiry: $("input#expiry").val(),
-				user_lat: user_lat,
-				user_long: user_long
-			};
-			console.log("form data:");
-			console.log(formdata);
-			request = $.ajax({
-				data: decodeURIComponent($.param(formdata)),
-				type: "GET",
-				contentType: "application/json",
-				url: "/api/pad/new/",
-			});
-			request.done(function(msg, status) {
-				console.log("response received with status code " + status);
-				console.log(msg);
-				if (status == "200") {
-					$("#padslist").append(msg);
-				} else {
-					$("#pad-error").html(msg);
-					//$("#pad-error").fadeOut(5000);
-				}
-			});
-			request.fail(function(msg) {
-				console.log("error:")
-				console.log(msg);
-				$("#pad-error").html(msg.responseText);			
-			});
+    #container
+        #pad-error			
+        #padlist Searching for nearby pads...
 
-			return false;
-		});
