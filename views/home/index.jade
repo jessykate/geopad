@@ -8,18 +8,68 @@ block content
 
 block script
     script.
-        socket = io.connect('http://localhost:3000'); 
-        socket.emit('join', 'home');
-        socket.on('padlist', function (data) {
-            console.log('retrieved list of pads.');
-            $("#padlist").html(data);
-        });
 
-        socket.on('newpad-notify', function (data) {
-            console.log(data);
-            $("#padlist").append(data);
-            // reset the form values 
-            $("input#name").val("");
-            $("input#radius").val("");
-            $("input#expiry").val("");
-        });
+        var user_lat, user_long;
+
+        geo_success = function(position) {
+            // save the user's position as a global variable 
+            user_lat = position.coords.latitude;
+            user_long = position.coords.longitude;
+            accuracy = position.coords.accuracy;
+            console.log("obtained user location (" + user_lat + "," + user_long + ") to accuracy of " + accuracy);
+            location_error = false;
+
+            // get or create the user's identity
+            if (!localStorage["geopad_userid"]) {
+                var userid = uuid.v4().replace(/-/g,'');
+                var user_avatar_url = "http://www.gravatar.com/avatar/"+ userid +"?d=monsterid"
+                localStorage["geopad_userid"] = userid;
+                localStorage["geopad_avatar"] = user_avatar_url
+
+            }
+            username = localStorage["geopad_username"];
+
+            socket = io.connect('http://localhost:3000'); 
+            socket.on('connect', function() {
+                socket.emit('join', 'home');
+
+                // now that we know the location and have joined the room,
+                // retrieve the relevant pads (response is sent via sockets,
+                // not ajax, so there is no response code here.)
+                request = $.ajax({
+                    data: {user_lat: user_lat, user_long: user_long},
+                    type: "GET",
+                    contentType: "application/json",
+                    url: "/api/pads/nearby/"
+                });
+
+            });
+
+            socket.on('padlist', function (data) {
+                console.log('retrieved list of pads.');
+                $("#padlist").html(data);
+            });
+
+            socket.on('newpad-notify', function (data) {
+                console.log(data);
+                $("#padlist").prepend($(data).fadeIn(1000));
+                // reset the form values 
+                $("input#name").val("");
+                $("input#radius").val("");
+                $("input#expiry").val("");
+            });
+
+        };
+
+        geo_error = function(error) {
+            console.log("Error, could not obtain location. Error " + error.code);
+            location_error = true;
+        };
+
+        navigator.geolocation.watchPosition(
+            geo_success, 
+            geo_error, 
+            {enableHighAccuracy:true}
+        );
+        
+

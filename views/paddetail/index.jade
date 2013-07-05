@@ -21,35 +21,72 @@ block content
 
 block script
     script.
-        var socket = io.connect('http://localhost:3000'); 
-        socket.emit('join', "#{pad.uuid}");
 
-        socket.on('newpost-notify', function (data) {
-            $("#postlist").prepend(data);
-            // reset the form values 
-            $("textarea#post-body").val("");
-        });
+        var user_lat, user_long;
 
-        $("#newpost").submit(function() {		
-            formdata = {
-                pad_id: $("input#pad-uuid").val(),
-                post_body: $("textarea#post-body").val()
-            };
-            console.log("form data:");
-            console.log(formdata);
+        geo_success = function(position) {
+            // save the user's position as a global variable 
+            user_lat = position.coords.latitude;
+            user_long = position.coords.longitude;
+            accuracy = position.coords.accuracy;
+            console.log("obtained user location (" + user_lat + "," + user_long + ") to accuracy of " + accuracy);
+            location_error = false;
 
-            request = $.ajax({
-                data: decodeURIComponent($.param(formdata)),
-                type: "GET",
-                contentType: "application/json",
-                url: "/api/post/new/",
-            });
-            request.fail(function(msg) {
-                console.log("error:")
-                console.log(msg);
-                $("#post-error").html(msg.responseText);			
+            // get or create the user's identity
+            if (!localStorage["geopad_username"]) {
+                localStorage["geopad_username"] = "mirandah";
+            }
+            username = localStorage["geopad_username"];
+
+            var socket = io.connect('http://localhost:3000'); 
+            
+            socket.on('connect', function() {
+                socket.emit('join', "#{pad.uuid}");
             });
 
-            return false;
-        });
+
+            socket.on('newpost-notify', function (data) {
+                $("#postlist").prepend($(data).fadeIn(1000));
+                // reset the form values 
+                $("textarea#post-body").val("");
+            });
+
+            $("#newpost").submit(function() {		
+                formdata = {
+                    pad_id: $("input#pad-uuid").val(),
+                    post_body: $("textarea#post-body").val(),
+                    user_id: localStorage["geopad_userid"]
+                };
+                console.log("form data:");
+                console.log(formdata);
+
+                request = $.ajax({
+                    data: decodeURIComponent($.param(formdata)),
+                    type: "GET",
+                    contentType: "application/json",
+                    url: "/api/post/new/",
+                });
+                request.fail(function(msg) {
+                    console.log("error:")
+                    console.log(msg);
+                    $("#post-error").html(msg.responseText);			
+                });
+
+                return false;
+            });
+        };
+
+        geo_error = function(error) {
+            console.log("Error, could not obtain location. Error " + error.code);
+            location_error = true;
+        };
+
+        navigator.geolocation.watchPosition(
+            geo_success, 
+            geo_error, 
+            {enableHighAccuracy:true}
+        );
+
+
+
 

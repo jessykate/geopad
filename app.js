@@ -44,7 +44,7 @@ app.get("/api/pads/nearby/", function(req, res) {
 	var data = url.parse(req.url, true);
 	console.dir(data); 	
 
-	client.query("SELECT * FROM pad_meta where ST_Intersects('POINT("+ data.query.user_long + " " + data.query.user_lat + ")'::geometry, area);", function(err, result) {
+	client.query("SELECT * FROM pad_meta where ST_Intersects('POINT("+ data.query.user_long + " " + data.query.user_lat + ")'::geometry, area) ORDER BY created DESC;", function(err, result) {
 		app.render('snippets/pad_list', {pads: result.rows}, function(err, html) {
 			console.log('retrieved nearby pads. sending list to ' + io.sockets.clients('home').length + ' connected clients');
 			io.sockets.in('home').emit('padlist', html)
@@ -56,8 +56,9 @@ app.get("/api/post/new", function(req, res) {
 	var data = url.parse(req.url, true);
 	var pad_id = data.query.pad_id;
 	var post_body = data.query.post_body;
-	var post_insert_string = "INSERT INTO pad_"+ pad_id +"(created, body) VALUES (now(), $1) RETURNING id, created, body";
-	var post_insert_args = [post_body,];
+	var user_id = data.query.user_id;
+	var post_insert_string = "INSERT INTO pad_"+ pad_id +"(created, body, userid) VALUES (now(), $1, $2) RETURNING id, created, body, userid";
+	var post_insert_args = [post_body, user_id];
 	client.query(post_insert_string, post_insert_args, function(err, result) {
 		if (!err) {
 			app.render("snippets/post_detail", {post: result.rows[0] }, function(err, html) {
