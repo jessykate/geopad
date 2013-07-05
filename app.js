@@ -2,15 +2,17 @@
 
 var express = require('express');
 var pg = require('pg');
+// use the native psql client which changes the formatting of authentication
+// information. 
 var url = require('url'); // hack to workaround non-working POST request
 var dateutils = require('date-utils');
 var uuid = require('node-uuid');
-
-var connectionString = process.env.DATABASE_URL || 'postgres://localhost:5432/geopad'
+var config = require('./config.js')
 
 // connect to postgres database
-var client = new pg.Client(connectionString);
-client.connect();
+
+var client = new pg.Client({user: config.db_user, database: config.db_name, password: config.db_password});
+client.connect(function(err) { console.log(err)});
 
 // create the express app
 var pub = __dirname + '/media';
@@ -32,6 +34,9 @@ server.listen(3000);
 // for clarity).
 app.set('views', __dirname + '/views');
 app.set("view engine", "jade");
+
+// make the domain available to all templates (for connecting sockets)
+app.locals.domain = config.domain;
 
 // routes
 
