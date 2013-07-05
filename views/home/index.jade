@@ -29,7 +29,7 @@ block script
             }
             username = localStorage["geopad_username"];
 
-            socket = io.connect('http://localhost:3000'); 
+            var socket = io.connect("#{domain}"); 
             socket.on('connect', function() {
                 socket.emit('join', 'home');
 
