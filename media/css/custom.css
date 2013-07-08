@@ -54,6 +54,10 @@ h1,h2 {
 	margin: 20px 0;
 }
 
+.sitetitle {
+	max-width: 680px;
+	margin: auto;
+}
 
 .subheading {
 	font-family: 'Lato', sans-serif;
@@ -133,14 +137,12 @@ input, button, select {
 #user-map {
 	margin: 40px 40px 0 0;
 	float: right;
-	height: 210px;
-	width: 210px;
+	height: 250px;
+	width: 250px;
 }
 
 #user-map-wrapper {
-	position: fixed;
-	top: 40px;
-	right: 40px;
+	float: right;
 }
 
 #spinner {
@@ -156,3 +158,4 @@ input, button, select {
     z-index:2;
     overflow: auto;
 }
+

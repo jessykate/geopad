@@ -4,18 +4,15 @@ html
     include header
 
     body
-        // Wrap all page content here
-        #wrap
-
-            #spinner
-                img(src="/img/ajax_loader_large.gif", alt="Loading...")
+        block titlearea
 
             #user-map-wrapper
                 #user-map
 
-            .container#page-content
+            .sitetitle
                 h1#app-name-header 
                     a#homelink(href="/") Geopad
+                
                 h3.subheading
                     img.header-logo(src="/img/Location-Icon.jpeg")
                     | Location-specific notepads shared with people nearby.
@@ -25,28 +22,38 @@ html
                         This is in-progress software. Database will be deleted
                         frequently and with no warning. Use for testing only. 
 
-                #n00b-help.alert
-                    a.close(data-dismiss="alert", href="#") 
-                        i.icon-remove
-                    ul
-                        li 
-                            h3.subheading Geopads are an easy way to share or chat with people nearby
-                        li 
-                            h3.subheading Browse through existing geopads or create your own
-                        li 
-                            h3.subheading You can only see notepads that are nearby! (But you can always go back to look at notepads you have viewed in the past.) 
 
 
-                block content
 
-                #footer.navbar-fixed-bottom
-                    .container
-                        h3.subheading I Want a New One!
-                        form#newpad(action="/api/pad/new/", method="GET")
-                            input.newfog-input-name#name(type="text", name="name", placeholder="Pad Name")
-                            input.newfog-input-radius#radius(type="number", name="radius", placeholder="Radius (m)")
-                            input.newfog-input-expiry#expiry(type="number", name="expiry", placeholder="Expiry (hours)")
-                            input.btn(type="submit") Create
+        // Wrap all page content here
+        .container#wrap#page-content
+
+            #spinner
+                img(src="/img/ajax_loader_large.gif", alt="Loading...")
+
+
+            #n00b-help.alert
+                a.close(data-dismiss="alert", href="#") 
+                    i.icon-remove
+                ul
+                    li 
+                        h3.subheading Geopads are an easy way to share or chat with people nearby
+                    li 
+                        h3.subheading Browse through existing geopads or create your own
+                    li 
+                        h3.subheading You can only see notepads that are nearby! (But you can always go back to look at notepads you have viewed in the past.) 
+
+
+            block content
+
+            #footer.navbar-fixed-bottom
+                .container
+                    h3.subheading I Want a New One!
+                    form#newpad(action="/api/pad/new/", method="GET")
+                        input.newfog-input-name#name(type="text", name="name", placeholder="Pad Name")
+                        input.newfog-input-radius#radius(type="number", name="radius", placeholder="Radius (m)")
+                        input.newfog-input-expiry#expiry(type="number", name="expiry", placeholder="Expiry (hours)")
+                        input.btn(type="submit") Create
 
         script.
 
