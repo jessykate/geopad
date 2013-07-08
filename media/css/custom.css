@@ -125,3 +125,34 @@ input, button, select {
 #page-content {
 	padding-bottom: 150px;
 }
+
+#padlist {
+	padding-top: 50px;
+}
+
+#user-map {
+	margin: 40px 40px 0 0;
+	float: right;
+	height: 210px;
+	width: 210px;
+}
+
+#user-map-wrapper {
+	position: fixed;
+	top: 40px;
+	right: 40px;
+}
+
+#spinner {
+    display: none;
+    width:100px;
+    height: 100px;
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    text-align:center;
+    margin-left: -50px;
+    margin-top: -100px;
+    z-index:2;
+    overflow: auto;
+}

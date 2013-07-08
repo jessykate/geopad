@@ -1,52 +1,50 @@
 extends ../layout
 
 block content
+    #spinner
+        img(src="/img/ajax-loader-flower.gif", alt="Loading...")
 
+    #newbinfo
+    
     #container
         #pad-error			
         #padlist Searching for nearby pads...
 
 block script
     script.
+        
+        // wire up the ajax-y spinning animated GIF when an ajax call is made.
+        $('#spinner').ajaxStart(function () {
+            $(this).fadeIn('fast');
+        });
 
-        var user_lat, user_long;
+        padsort_recent_activity = function() {
+        };
 
-        geo_success = function(position) {
-            // save the user's position as a global variable 
-            user_lat = position.coords.latitude;
-            user_long = position.coords.longitude;
-            accuracy = position.coords.accuracy;
-            console.log("obtained user location (" + user_lat + "," + user_long + ") to accuracy of " + accuracy);
-            location_error = false;
+        padsort_popularity = function() {
+        };
 
-            // get or create the user's identity
-            if (!localStorage["geopad_userid"]) {
-                var userid = uuid.v4().replace(/-/g,'');
-                var user_avatar_url = "http://www.gravatar.com/avatar/"+ userid +"?d=monsterid"
-                localStorage["geopad_userid"] = userid;
-                localStorage["geopad_avatar"] = user_avatar_url
+        padsort_created = function() {
+        };
 
-            }
-            username = localStorage["geopad_username"];
+        per_page_location_callback = function() {
+            socket = io.connect("#{domain}"); 
 
-            var socket = io.connect("#{domain}"); 
             socket.on('connect', function() {
                 socket.emit('join', 'home');
 
-                // now that we know the location and have joined the room,
-                // retrieve the relevant pads (response is sent via sockets,
-                // not ajax, so there is no response code here.)
-                request = $.ajax({
-                    data: {user_lat: user_lat, user_long: user_long},
-                    type: "GET",
-                    contentType: "application/json",
-                    url: "/api/pads/nearby/"
-                });
+                retrieve_nearby_pads(user_lat, user_long);
+                $("#spinner").stop().fadeOut('fast');
 
             });
 
             socket.on('padlist', function (data) {
                 console.log('retrieved list of pads.');
+                padlist = data;
+                pads_recent_activity = [];
+                pads_popularity = [];
+                pads_created = [];
+                
                 $("#padlist").html(data);
             });
 
@@ -58,18 +56,9 @@ block script
                 $("input#radius").val("");
                 $("input#expiry").val("");
             });
-
+        
         };
 
-        geo_error = function(error) {
-            console.log("Error, could not obtain location. Error " + error.code);
-            location_error = true;
-        };
 
-        navigator.geolocation.watchPosition(
-            geo_success, 
-            geo_error, 
-            {enableHighAccuracy:true}
-        );
         
 

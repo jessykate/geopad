@@ -3,40 +3,142 @@ html
 
     include header
 
-    script(type="text/javascript", src="/js/jquery-1.8.2.js")
-    script(type="text/javascript", src="/js/vendor/modernizr-1.6.min.js")
-    script(type="text/javascript", src="/js/vendor/underscore.js")
-    script(type="text/javascript", src="/js/vendor/bootstrap.js")
-    script(type="text/javascript", src="/js/vendor/socket.io.js")
-    script(type="text/javascript", src="/js/vendor/uuid.js")
-
     body
         // Wrap all page content here
         #wrap
+
+            #user-map-wrapper
+                #user-map
+
             .container#page-content
                 h1#app-name-header 
                     a#homelink(href="/") Geopad
                 h3.subheading
-                    img.header-logo(src="/img/Location-Icon.jpeg") .
+                    img.header-logo(src="/img/Location-Icon.jpeg")
                     | Location-specific notepads shared with people nearby.
                 p
-                    span.text-error Warning! 
-                    span.text-warning.
+                    small.text-error Warning! 
+                    small.text-warning.
                         This is in-progress software. Database will be deleted
                         frequently and with no warning. Use for testing only. 
 
+                #n00b-help.alert
+                    a.close(data-dismiss="alert", href="#") 
+                        i.icon-remove
+                    ul
+                        li 
+                            h3.subheading Geopads are an easy way to share or chat with people nearby
+                        li 
+                            h3.subheading Browse through existing geopads or create your own
+                        li 
+                            h3.subheading You can only see notepads that are nearby! (But you can always go back to look at notepads you have viewed in the past.) 
+
+
                 block content
 
-        #footer.navbar-fixed-bottom
-            .container
-                h3.subheading I Want a New One!
-                form#newpad(action="/api/pad/new/", method="GET")
-                    input.newfog-input-name#name(type="text", name="name", placeholder="Pad Name")
-                    input.newfog-input-radius#radius(type="number", name="radius", placeholder="Radius (m)")
-                    input.newfog-input-expiry#expiry(type="number", name="expiry", placeholder="Expiry (hours)")
-                    input.btn(type="submit") Create
+                #footer.navbar-fixed-bottom
+                    .container
+                        h3.subheading I Want a New One!
+                        form#newpad(action="/api/pad/new/", method="GET")
+                            input.newfog-input-name#name(type="text", name="name", placeholder="Pad Name")
+                            input.newfog-input-radius#radius(type="number", name="radius", placeholder="Radius (m)")
+                            input.newfog-input-expiry#expiry(type="number", name="expiry", placeholder="Expiry (hours)")
+                            input.btn(type="submit") Create
 
         script.
+
+            var user_lat, user_long;
+
+            geo_success = function(position) {
+                // save the user's position as a global variable 
+                user_lat = position.coords.latitude;
+                user_long = position.coords.longitude;
+                accuracy = position.coords.accuracy;
+                console.log("obtained user location (" + user_lat + "," + user_long + ") to accuracy of " + accuracy);
+                location_error = false;
+
+                // get or create the user's identity
+                if (!localStorage["geopad_userid"]) {
+                    var userid = uuid.v4().replace(/-/g,'');
+                    var user_avatar_url = "http://www.gravatar.com/avatar/"+ userid +"?d=monsterid"
+                    localStorage["geopad_userid"] = userid;
+                    localStorage["geopad_avatar"] = user_avatar_url
+
+                }
+                username = localStorage["geopad_username"];
+
+                /**** display a map to let the user fine-tune their location ***/
+
+                // use the accuracy parameter of the geolocation API to
+                // calculate rough bounds on the location, and convert this to
+                // an error in degrees. Add 100 meters for flexibility. 
+                var flexibility_factor = 100;
+                var accuracy_degrees = (accuracy + flexibility_factor)/111120;
+                console.log(accuracy_degrees);
+                /* functions that take the latitude or longitude, and an error
+                    * value (positive error for easterly/northerly direction,
+                    * negative value for westerly/southerly) and calculates the
+                    * bound on the location accuracy in a lat/long
+                    * coordinate-system aware manner (ie, a latitude of +175
+                    * degrees with an easterly error of +10 would return a value of
+                    * -5 for the easterly bound.  
+                    */
+                lng_bnd = function(lng, err) { x = ((lng + 180) + err) % 360 - 180; return x; };
+                lat_bnd = function(lat, err) { x = ((lat + 90) + err) % 180 - 90; return x; };
+                var southWestBound = new L.LatLng(lat_bnd(user_lat, -accuracy_degrees), lng_bnd(user_long, -accuracy_degrees)),
+                    northEastBound = new L.LatLng(lat_bnd(user_lat, accuracy_degrees), lng_bnd(user_long, accuracy_degrees));
+                console.log('southwest bound: ' + southWestBound);
+                console.log('northeast bound: ' + northEastBound);
+                var user_position_uncertainty = new L.LatLngBounds(southWestBound, northEastBound);
+
+                //generate the map with the computed bounds 
+                var map = L.map('user-map').setView([user_lat, user_long], 16);
+                map.setMaxBounds(user_position_uncertainty);
+                L.tileLayer('http://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                    attribution: 'Map data &copy; <a href="http://openstreetmap.org">OpenStreetMap</a>' }
+                ).addTo(map);
+                var user_location_marker = L.marker(
+                    [user_lat, user_long], 
+                    {draggable: true}
+                ).addTo(map);
+                user_location_marker.bindPopup("Drag the pin to<br>fine-tune your<br>location.").openPopup();
+                user_location_marker.on('dragend', function(event) {
+                    var marker = event.target;
+                    var updated_latlng = marker.getLatLng();
+                    user_lat = updated_latlng.lat;
+                    user_long = updated_latlng.lng;
+                    // update the list of pads based on the new location
+                    retrieve_nearby_pads(user_lat, user_long);
+
+                    console.log('updated user position to: ' + user_lat + ", " + user_long);
+                })
+
+                // this should be called at the bottom of the geo_success function
+                if (typeof per_page_location_callback == 'function') {
+                    per_page_location_callback();
+                }
+
+            };
+
+            geo_error = function(error) {
+                console.log("Error, could not obtain location. Error " + error.code);
+                location_error = true;
+            };
+
+            navigator.geolocation.watchPosition(
+                geo_success, 
+                geo_error, 
+                {enableHighAccuracy:true}
+            );
+            
+
+            // end geoposition stuff
+
+            // only show the help info if it's the user's first time on the
+            // site. 
+            if(localStorage["geopad_userid"]) {
+                $('#n00b-help').hide();
+            }
 
             $("#newpad").submit(function() {		
                 formdata = {
@@ -64,9 +166,6 @@ html
                 return false;
             });
 
-        block script
-
-        script.
             // Piwik
             var _paq = _paq || [];
             _paq.push(['trackPageView']);
@@ -82,3 +181,6 @@ html
         noscript
             p
                 img(src="http://piwik.sexysysadmin.com/piwik.php?idsite=1", style="border:0", alt="")
+
+        block script
+

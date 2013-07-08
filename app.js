@@ -11,8 +11,13 @@ var config = require('./config.js')
 
 // connect to postgres database
 
-var client = new pg.Client({user: config.db_user, database: config.db_name, password: config.db_password});
-client.connect(function(err) { console.log(err)});
+if (process.env.GEOPAD_DATABASE_URL) {
+	console.log("using process.env.GEOPAD_DATABASE_URL");
+	var client = new pg.Client(process.env.GEOPAD_DATABASE_URL);
+} else {
+	var client = new pg.Client({user: config.db_user, database: config.db_name, password: config.db_password});
+}
+client.connect(function(err) { if(err) {console.log(err);}});
 
 // create the express app
 var pub = __dirname + '/media';
@@ -110,7 +115,7 @@ app.get("/api/pad/new", function(req, res) {
 					res.render('snippets/pad_meta', {pad: pad_meta}, function(err, html) {
 						console.log("pad created. html being sent:");
 						console.log(html);
-						io.sockets.emit('newpad-notify', html);
+						io.sockets.in('home').emit('newpad-notify', html);
 						res.send(200);
 					});				
 				});
