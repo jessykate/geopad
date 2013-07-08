@@ -1,8 +1,6 @@
 extends ../layout
 
 block content
-    #spinner
-        img(src="/img/ajax-loader-flower.gif", alt="Loading...")
 
     #newbinfo
     
@@ -13,11 +11,6 @@ block content
 block script
     script.
         
-        // wire up the ajax-y spinning animated GIF when an ajax call is made.
-        $('#spinner').ajaxStart(function () {
-            $(this).fadeIn('fast');
-        });
-
         padsort_recent_activity = function() {
         };
 
@@ -33,7 +26,7 @@ block script
             socket.on('connect', function() {
                 socket.emit('join', 'home');
 
-                retrieve_nearby_pads(user_lat, user_long);
+                retrieve_nearby_pads(user_lat, user_lng);
                 $("#spinner").stop().fadeOut('fast');
 
             });

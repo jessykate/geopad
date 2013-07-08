@@ -58,6 +58,7 @@ app.get("/api/pads/nearby/", function(req, res) {
 		app.render('snippets/pad_list', {pads: result.rows}, function(err, html) {
 			console.log('retrieved nearby pads. sending list to ' + io.sockets.clients('home').length + ' connected clients');
 			io.sockets.in('home').emit('padlist', html)
+			res.send(200);
 		})
 	}); 
 });

@@ -145,8 +145,8 @@ input, button, select {
 
 #spinner {
     display: none;
-    width:100px;
-    height: 100px;
+    width:300px;
+    height: 300px;
     position: fixed;
     top: 50%;
     left: 50%;
