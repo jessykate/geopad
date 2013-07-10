@@ -2,15 +2,18 @@
 
 var express = require('express');
 var pg = require('pg');
-// use the native psql client which changes the formatting of authentication
-// information. 
 var url = require('url'); // hack to workaround non-working POST request
 var dateutils = require('date-utils');
 var uuid = require('node-uuid');
 var config = require('./config.js')
+var cronJob = require('cron').CronJob;
+
+/* * * * * * * * * * * * * * * * * * * * * * 
+ *				APP SETUP				   *
+ * * * * * * * * * * * * * * * * * * * * * */
+
 
 // connect to postgres database
-
 if (process.env.GEOPAD_DATABASE_URL) {
 	console.log("using process.env.GEOPAD_DATABASE_URL");
 	var client = new pg.Client(process.env.GEOPAD_DATABASE_URL);
@@ -43,7 +46,31 @@ app.set("view engine", "jade");
 // make the domain available to all templates (for connecting sockets)
 app.locals.domain = config.domain;
 
-// routes
+/* * * * * * * * * * * * * * * * * * * * * * 
+ *				TASKS					   *
+ * * * * * * * * * * * * * * * * * * * * * */
+
+// check for expired pads every hour on the 7th minute
+hourly = '* 7 * * * *';
+expiry_watch = new cronJob(hourly, function() {
+	console.log("checking for expired pads... ");
+	client.query(
+		"delete from active USING pad_meta WHERE pad_meta.uuid = active.uuid " + 
+		"AND pad_meta.expiry <= now() RETURNING active.uuid;", function(err, result) {
+			if (result.rows.length > 0) {
+				console.log("removed the following " + result.rows.length + " pads from active list:");
+				console.log(result.rows);
+			} else {
+				console.log("no pads expired at this time.");
+			}
+	});
+}, null, true);
+
+
+/* * * * * * * * * * * * * * * * * * * * * * 
+ *				ROUTES					   *
+ * * * * * * * * * * * * * * * * * * * * * */
+
 
 app.get("/", function(req, res) {
 	res.render('home');
@@ -54,8 +81,13 @@ app.get("/api/pads/nearby/", function(req, res) {
 	var data = url.parse(req.url, true);
 	console.dir(data); 	
 
-	client.query("SELECT * FROM pad_meta where ST_Intersects('POINT("+ data.query.user_long + " " + data.query.user_lat + ")'::geometry, area) ORDER BY created DESC;", function(err, result) {
-		app.render('snippets/pad_list', {pads: result.rows}, function(err, html) {
+	client.query(
+		"SELECT * FROM pad_meta INNER JOIN active ON " + 
+		"pad_meta.uuid = active.uuid where " + 
+		"ST_Intersects('POINT(" + data.query.user_long + 
+		" " + data.query.user_lat + ")'::geometry, area) ORDER BY " + 
+		"created DESC;", function(err, result) {
+			app.render('snippets/pad_list', {pads: result.rows}, function(err, html) {
 			console.log('retrieved nearby pads. sending list to ' + io.sockets.clients('home').length + ' connected clients');
 			io.sockets.in('home').emit('padlist', html)
 			res.send(200);
@@ -113,14 +145,31 @@ app.get("/api/pad/new", function(req, res) {
 				var table_name = "pad_" + the_uuid;
 				var paddetail_insert_string = "CREATE TABLE IF NOT EXISTS "+ table_name +" (id SERIAL PRIMARY KEY, created TIMESTAMP, body TEXT, userid CHAR(32) )";
 				client.query(paddetail_insert_string, function(err, result) {
-					res.render('snippets/pad_meta', {pad: pad_meta}, function(err, html) {
-						console.log("pad created. html being sent:");
-						console.log(html);
-						io.sockets.in('home').emit('newpad-notify', html);
-						res.send(200);
-					});				
+					if (!err) {
+						var active_insert_string = "INSERT INTO active (uuid) VALUES ($1)";
+						var active_insert_args = [the_uuid];
+						client.query(active_insert_string, active_insert_args, function(err, result) {
+							if (!err) {
+								res.render('snippets/pad_meta', {pad: pad_meta}, function(err, html) {
+									console.log("pad created. html being sent:");
+									console.log(html);
+									io.sockets.in('home').emit('newpad-notify', html);
+									res.send(200);
+								});				
+							} else {
+								console.log("error inserting into table 'active'");
+								console.log(err);
+								res.send(500);
+							}
+						});
+					} else {
+						console.log("error creating table 'pad_" + the_uuid +"'");
+						console.log(err);
+						res.send(500);
+					}
 				});
 			} else {
+				console.log("error inserting into table 'pad_meta'");
 				console.log(err);
 				res.send(500);
 			}
@@ -133,7 +182,7 @@ app.get("/pad/:padid", function(req, res) {
 	console.log("retrieving pad " + padid);
 	client.query("select uuid, created, updated, name, ST_AsText(origin), radius, expiry, salt, password from pad_meta where uuid='"+ padid +"'", function (err, result) {
 		if (!err) {
-			// lazily assumed the row actually IS unique since it's supposed to
+			// lazily assumes the row actually IS unique since it's supposed to
 			// be a UUID (should really double check). 
 			var pad = result.rows[0];
 			console.log("obtained pad metadata:");

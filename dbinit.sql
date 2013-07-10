@@ -19,3 +19,9 @@ CREATE TABLE IF NOT EXISTS pad_meta (
 );
 
 CREATE INDEX pad_area_gindex ON pad_meta USING GIST (area);
+
+CREATE TABLE IF NOT EXISTS active (
+	id SERIAL PRIMARY KEY, 
+	uuid CHAR(32), 
+	foreign key (uuid) references pad_meta(uuid)
+);

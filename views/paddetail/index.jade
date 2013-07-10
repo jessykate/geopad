@@ -9,9 +9,12 @@ block content
             if pad.expiry 
                 / Expires #{pad.expiry}
 
+        hr
+
         form#newpost(action="/api/post/new/", method="GET")
             textarea#post-body
             input#pad-uuid(type="hidden", name="uuid", value="#{pad.uuid}") 
+            br
             input.btn(type="submit", value="Post")
 
         #post-error

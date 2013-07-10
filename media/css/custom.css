@@ -112,9 +112,9 @@ input, button, select {
 	margin-bottom: 30px;
 }
 
-#newpost-input {
-	height: 30px;
-	width: 300px;
+#post-body {
+	height: 70px;
+	width: 400px;
 	font-size: 25px;
 }
 

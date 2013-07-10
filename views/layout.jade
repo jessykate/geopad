@@ -58,8 +58,12 @@ html
         script.
 
             var user_lat, user_lng, user_delta_lat, user_delta_lng, user_geoposition_lat, user_geoposition_lng;
-            user_delta_lat = 0;
-            user_delta_lng = 0;
+            // load any known user position tweaks from session storage
+            user_delta_lat = parseFloat(sessionStorage.user_delta_lat || 0);
+            user_delta_lng = parseFloat(sessionStorage.user_delta_lng || 0);
+
+            var map = L.map('user-map');
+            var user_location_marker = L.marker();
 
             geo_success = function(position) {
                 // save the user's position as a global variable. save both the
@@ -71,12 +75,16 @@ html
                 // location. 
                 user_geoposition_lat = position.coords.latitude;
                 user_geoposition_lng = position.coords.longitude;
-                user_lat = user_geoposition_lat + user_delta_lat;
-                user_lng = user_geoposition_lng + user_delta_lng;
 
-                accuracy = position.coords.accuracy;
-                console.log("obtained user location (" + user_lat + "," + user_lng + ") to accuracy of " + accuracy);
-                location_error = false;
+                // every time the geolocation api updates, add the user's
+                // tweaks to the position. 
+                user_lat = lat_bnd(user_geoposition_lat, user_delta_lat);
+                user_lng = lng_bnd(user_geoposition_lng, user_delta_lng);
+
+                var accuracy = position.coords.accuracy;
+                console.log("raw geolocation position: " + user_geoposition_lat, user_geoposition_lng);
+                console.log("user deltas: " + user_delta_lat, user_delta_lng);
+                console.log("user location set to (" + user_lat + "," + user_lng + ") to accuracy of " + accuracy);
 
                 // get or create the user's identity
                 if (!localStorage["geopad_userid"]) {
@@ -94,18 +102,8 @@ html
                 // calculate rough bounds on the location, and convert this to
                 // an error in degrees. Add 100 meters for flexibility. 
                 var flexibility_factor = 100;
-                var accuracy_degrees = (accuracy + flexibility_factor)/111120;
+                accuracy_degrees = (accuracy + flexibility_factor)/111120;
                 console.log(accuracy_degrees);
-                /* functions that take the latitude or longitude, and an error
-                    * value (positive error for easterly/northerly direction,
-                    * negative value for westerly/southerly) and calculates the
-                    * bound on the location accuracy in a lat/long
-                    * coordinate-system aware manner (ie, a latitude of +175
-                    * degrees with an easterly error of +10 would return a value of
-                    * -5 for the easterly bound.  
-                    */
-                lng_bnd = function(lng, err) { x = ((lng + 180) + err) % 360 - 180; return x; };
-                lat_bnd = function(lat, err) { x = ((lat + 90) + err) % 180 - 90; return x; };
                 var southWestBound = new L.LatLng(lat_bnd(user_lat, -accuracy_degrees), lng_bnd(user_lng, -accuracy_degrees)),
                     northEastBound = new L.LatLng(lat_bnd(user_lat, accuracy_degrees), lng_bnd(user_lng, accuracy_degrees));
                 console.log('southwest bound: ' + southWestBound);
@@ -113,13 +111,15 @@ html
                 var user_position_uncertainty = new L.LatLngBounds(southWestBound, northEastBound);
 
                 //generate the map with the computed bounds 
-                var map = L.map('user-map').setView([user_lat, user_lng], 16);
+                map.setView([user_lat, user_lng], 15);
                 map.setMaxBounds(user_position_uncertainty);
                 L.tileLayer('http://a.tile.stamen.com/toner/{z}/{x}/{y}.png', {
                 //L.tileLayer('http://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
                     attribution: 'Tiles by <a href="http://stamen.com">Stamen Design</a>, <a href="http://creativecommons.org/licenses/by/3.0">CC BY 3.0</a>& <a href="http://openstreetmap.org">OpenStreetMap</a>' }
                 ).addTo(map);
-                var user_location_marker = L.marker(
+                // remove the old marker and generate a new one.
+                map.removeLayer(user_location_marker);
+                user_location_marker = L.marker(
                     [user_lat, user_lng], 
                     {draggable: true}
                 ).addTo(map);
@@ -127,9 +127,14 @@ html
                 user_location_marker.on('dragend', function(event) {
                     var marker = event.target;
                     var updated_latlng = marker.getLatLng();
-                    user_delta_lat = user_lat - updated_latlng.lat;
-                    user_delta_lng = user_lng - updated_latlng.lng;
+                    var new_user_delta_lat = updated_latlng.lat - user_lat;
+                    var new_user_delta_lng = updated_latlng.lng - user_lng;
+                    // update the session storage value
+                    sessionStorage.user_delta_lat = new_user_delta_lat;
+                    sessionStorage.user_delta_lng = new_user_delta_lng;
 
+                    // update the actual user position values used for
+                    // calculations, new pad creation, etc. 
                     user_lat = updated_latlng.lat;
                     user_lng = updated_latlng.lng;
                     // update the list of pads based on the new location
@@ -147,7 +152,6 @@ html
 
             geo_error = function(error) {
                 console.log("Error, could not obtain location. Error " + error.code);
-                location_error = true;
             };
 
             var watch_id = navigator.geolocation.watchPosition(
