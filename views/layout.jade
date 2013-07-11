@@ -60,6 +60,11 @@ html
 
         script.
 
+            $.timeago.settings.allowFuture = true;
+            $(document).ready(function() {
+                $(".relative-date").timeago();
+            });
+
             var user_lat, user_lng, user_delta_lat, user_delta_lng, user_geoposition_lat, user_geoposition_lng;
             // load any known user position tweaks from session storage
             user_delta_lat = parseFloat(sessionStorage.user_delta_lat || 0);

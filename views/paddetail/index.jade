@@ -3,11 +3,12 @@ extends ../layout
 block content
 
     #container
-        h1 #{pad.name} 
+        h1#pad-title #{pad.name} 
         .pad-meta-data 
             span #{pad.radius} m 
             if pad.expiry 
-                / Expires #{pad.expiry}
+                / Expires 
+                span.relative-date(title="#{pad.expiry}") #{pad.expiry}
 
         hr
 

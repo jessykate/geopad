@@ -165,3 +165,6 @@ input, button, select {
     overflow: auto;
 }
 
+#pad-title {
+	font-weight: normal;
+}

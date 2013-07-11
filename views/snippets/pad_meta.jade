@@ -1,9 +1,15 @@
 .pad-meta-data 
-	span #{pad.radius} m 
-	if pad.expiry 
-		/ Expires #{pad.expiry}
+    span #{pad.radius} m 
+    if pad.expiry 
+        / Expires 
+        span.relative-date(title="#{pad.expiry}") #{pad.expiry}
 
-	h3.fog-meta-name.subheading
-		a.foglink(href="/pad/" + pad.uuid) #{pad.name}
-		
-	hr
+    h3.fog-meta-name.subheading
+        a.foglink(href="/pad/" + pad.uuid) #{pad.name}
+
+    hr
+
+    script.
+        $(document).ready(function() {
+            $(".relative-date").timeago();
+        });
