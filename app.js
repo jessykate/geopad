@@ -31,6 +31,7 @@ app.use(app.router);
 app.use(express.static(pub));
 app.use(require('connect').bodyParser());
 app.use(express.errorHandler());
+app.use(express.favicon(__dirname + "/media/img/favicon.ico"));
 
 var server = require('http').createServer(app);
 var io = require('socket.io').listen(server);

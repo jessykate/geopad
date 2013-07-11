@@ -59,6 +59,10 @@ h1,h2 {
 	margin: auto;
 }
 
+#app-name {
+	margin-top: 40px;
+}
+
 .subheading {
 	font-family: 'Lato', sans-serif;
 	font-weight: 100;
@@ -136,12 +140,14 @@ input, button, select {
 
 #user-map {
 	margin: 40px 40px 0 0;
-	float: right;
 	height: 250px;
 	width: 250px;
 }
 
 #user-map-wrapper {
+	position: relative;
+	top: -30px;
+	right: 40px;
 	float: right;
 }
 

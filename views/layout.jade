@@ -6,13 +6,14 @@ html
     body
         block titlearea
 
+            .sitetitle#app-name
+                h1#app-name-header 
+                    a#homelink(href="/") Geopad
+                
             #user-map-wrapper
                 #user-map
 
             .sitetitle
-                h1#app-name-header 
-                    a#homelink(href="/") Geopad
-                
                 h3.subheading
                     img.header-logo(src="/img/Location-Icon.jpeg")
                     | Location-specific notepads shared with people nearby.
@@ -54,6 +55,8 @@ html
                         input.newfog-input-radius#radius(type="number", name="radius", placeholder="Radius (m)")
                         input.newfog-input-expiry#expiry(type="number", name="expiry", placeholder="Expiry (hours)")
                         input.btn(type="submit") Create
+                    div.pull-right
+                        a(href="https://github.com/jessykate/geopad/issues") Ideas/Suggestions
 
         script.
 
