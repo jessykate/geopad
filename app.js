@@ -89,7 +89,9 @@ app.get("/api/pads/nearby/", function(req, res) {
 		" " + data.query.user_lat + ")'::geometry, area) ORDER BY " + 
 		"created DESC;", function(err, result) {
 			result.rows.forEach(function(item) {
-				item.expiry = item.expiry.toFormat("YYYY-MM-DDTHH24:MI:SS")
+				if (item.expiry) {
+					item.expiry = item.expiry.toFormat("YYYY-MM-DDTHH24:MI:SS")
+				}
 			});
 			app.render('snippets/pad_list', {pads: result.rows}, function(err, html) {
 			console.log('retrieved nearby pads. sending list to ' + io.sockets.clients('home').length + ' connected clients');
@@ -145,7 +147,13 @@ app.get("/api/pad/new", function(req, res) {
 			if (!err) {
 				console.log("result of insert:");
 				console.log(result.rows[0]);
-				var pad_meta = {name: result.rows[0].name, uuid: result.rows[0].uuid, radius: result.rows[0].radius, expiry: result.rows[0].expiry.toFormat("YYYY-MM-DDTHH24:MI:S")}
+				var pad_meta;
+				if (result.rows[0].expiry) {
+					pad_meta = {name: result.rows[0].name, uuid: result.rows[0].uuid, radius: result.rows[0].radius, expiry: result.rows[0].expiry.toFormat("YYYY-MM-DDTHH24:MI:S")}
+				} else {
+					pad_meta = {name: result.rows[0].name, uuid: result.rows[0].uuid, radius: result.rows[0].radius, expiry: result.rows[0].expiry}
+				}
+
 				var table_name = "pad_" + the_uuid;
 				var paddetail_insert_string = "CREATE TABLE IF NOT EXISTS "+ table_name +" (id SERIAL PRIMARY KEY, created TIMESTAMP, body TEXT, userid CHAR(32) )";
 				client.query(paddetail_insert_string, function(err, result) {
@@ -189,7 +197,9 @@ app.get("/pad/:padid", function(req, res) {
 			// lazily assumes the row actually IS unique since it's supposed to
 			// be a UUID (should really double check). 
 			var pad = result.rows[0];
-			pad.expiry = pad.expiry.toFormat("YYYY-MM-DDTHH24:MI:SS");
+			if (pad.expiry) {
+				pad.expiry = pad.expiry.toFormat("YYYY-MM-DDTHH24:MI:SS");
+			}
 			console.log("obtained pad metadata:");
 			console.log(pad);
 			client.query("SELECT * FROM pad_" + padid + " ORDER BY created DESC;", function(err, result) {
