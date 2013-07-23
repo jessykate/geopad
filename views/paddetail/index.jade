@@ -26,14 +26,16 @@ block content
 block script
     script.
 
-        per_page_location_callback = function() {
+        // called a single time after the initial position is retrieved. 
+        page_location_success_callback = function() {
             
             var socket = io.connect("#{domain}"); 
-            
+
+            // register the socket callbacks for this page and join the
+            // appropriate rooms. 
             socket.on('connect', function() {
                 socket.emit('join', "#{pad.uuid}");
             });
-
 
             socket.on('newpost-notify', function (data) {
                 $("#postlist").prepend($(data).fadeIn(1000));

@@ -11,17 +11,10 @@ block content
 block script
     script.
         
-        padsort_recent_activity = function() {
-        };
+        // called a single time after the initial position is retrieved. 
+        page_location_success_callback = function() {
 
-        padsort_popularity = function() {
-        };
-
-        padsort_created = function() {
-        };
-
-        per_page_location_callback = function() {
-            socket = io.connect("#{domain}"); 
+            var socket = io.connect("#{domain}"); 
 
             socket.on('connect', function() {
                 socket.emit('join', 'home');
@@ -49,8 +42,18 @@ block script
                 $("input#radius").val("");
                 $("input#expiry").val("");
             });
-        
+    
         };
+
+        padsort_recent_activity = function() {
+        };
+
+        padsort_popularity = function() {
+        };
+
+        padsort_created = function() {
+        };
+
 
 
         

@@ -60,6 +60,7 @@ html
 
         script.
 
+            // enable date and time to be displayed in relative terms.
             $.timeago.settings.allowFuture = true;
             $(document).ready(function() {
                 $(".relative-date").timeago();
@@ -74,13 +75,13 @@ html
             var user_location_marker = L.marker();
 
             geo_success = function(position) {
-                // save the user's position as a global variable. save both the
-                // original position returned by the geolocation API and the
-                // delta refinement specified by the user. to begin with, of
-                // course, the two positions are the same, and the user_delta
-                // is 0. saving the user_delta ensures we don't lose their
-                // position inputs when the geolocation API refreshes their
-                // location. 
+                // save or update the user's position as a global variable.
+                // save both the original position returned by the geolocation
+                // API and the delta refinement specified by the user. to begin
+                // with, of course, the two positions are the same, and the
+                // user_delta is 0. saving the user_delta ensures we don't lose
+                // their position inputs when the geolocation API refreshes
+                // their location. 
                 user_geoposition_lat = position.coords.latitude;
                 user_geoposition_lng = position.coords.longitude;
 
@@ -111,7 +112,7 @@ html
                 // an error in degrees. Add 100 meters for flexibility. 
                 var flexibility_factor = 100;
                 accuracy_degrees = (accuracy + flexibility_factor)/111120;
-                console.log(accuracy_degrees);
+                console.log("accuracy_degrees: " + accuracy_degrees);
                 var southWestBound = new L.LatLng(lat_bnd(user_lat, -accuracy_degrees), lng_bnd(user_lng, -accuracy_degrees)),
                     northEastBound = new L.LatLng(lat_bnd(user_lat, accuracy_degrees), lng_bnd(user_lng, accuracy_degrees));
                 console.log('southwest bound: ' + southWestBound);
@@ -151,16 +152,29 @@ html
                     console.log('updated user position to: ' + user_lat + ", " + user_lng);
                 })
 
-                // this should be called at the bottom of the geo_success function
-                if (typeof per_page_location_callback == 'function') {
-                    per_page_location_callback();
-                }
-
             };
 
             geo_error = function(error) {
                 console.log("Error, could not obtain location. Error " + error.code);
             };
+
+            initial_position_callback = function(position) {
+                geo_success(position);
+                // support for a per-page callback that happens only once the
+                // initial position has been determined
+                if (typeof page_location_success_callback == 'function') {
+                    page_location_success_callback();
+                }
+            }
+            
+
+            // initially just get the position once, and then set a watch for
+            // updates. this allows for callbacks that need to be called only
+            // once, after the position has been determined. 
+            navigator.geolocation.getCurrentPosition(
+                initial_position_callback,
+                geo_error
+            );
 
             var watch_id = navigator.geolocation.watchPosition(
                 geo_success, 
