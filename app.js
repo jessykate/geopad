@@ -55,14 +55,15 @@ app.locals.domain = config.domain;
 hourly = '* 7 * * * *';
 expiry_watch = new cronJob(hourly, function() {
 	console.log("checking for expired pads... ");
+	var now = new Date();
 	client.query(
 		"delete from active USING pad_meta WHERE pad_meta.uuid = active.uuid " + 
 		"AND pad_meta.expiry <= now() RETURNING active.uuid;", function(err, result) {
 			if (result.rows.length > 0) {
-				console.log("removed the following " + result.rows.length + " pads from active list:");
+				console.log(now.toFormat("YYYY-MM-DDTHH24:MI:S") + ": removed the following " + result.rows.length + " pads from active list:");
 				console.log(result.rows);
 			} else {
-				console.log("no pads expired at this time.");
+				console.log(now.toFormat("YYYY-MM-DDTHH24:MI:S") + ": no pads expired at this time.");
 			}
 	});
 }, null, true);
