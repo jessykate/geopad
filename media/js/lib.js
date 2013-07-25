@@ -104,7 +104,7 @@ retrieve_nearby_pads = function(user_corrected_lat, user_corrected_lng) {
 
 	console.log("retrieving nearby pads...");
 	request = $.ajax({
-		data: {user_lat: user_corrected_lat, user_lng: user_corrected_lng},
+		data: {user_lat: user_corrected_lat, user_lng: user_corrected_lng, user_id: localStorage.geopad_userid},
 		type: "GET",
 		contentType: "application/json",
 		url: "/api/pads/nearby/"
