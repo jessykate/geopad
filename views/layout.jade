@@ -60,130 +60,15 @@ html
 
         script.
 
+            // the app creates a random identity for the user stored in
+            // LocalStorage.
+            get_or_create_random_identity();
+
             // enable date and time to be displayed in relative terms.
             $.timeago.settings.allowFuture = true;
             $(document).ready(function() {
                 $(".relative-date").timeago();
             });
-
-            var user_lat, user_lng, user_delta_lat, user_delta_lng, user_geoposition_lat, user_geoposition_lng;
-            // load any known user position tweaks from session storage
-            user_delta_lat = parseFloat(sessionStorage.user_delta_lat || 0);
-            user_delta_lng = parseFloat(sessionStorage.user_delta_lng || 0);
-
-            var map = L.map('user-map');
-            var user_location_marker = L.marker();
-
-            geo_success = function(position) {
-                // save or update the user's position as a global variable.
-                // save both the original position returned by the geolocation
-                // API and the delta refinement specified by the user. to begin
-                // with, of course, the two positions are the same, and the
-                // user_delta is 0. saving the user_delta ensures we don't lose
-                // their position inputs when the geolocation API refreshes
-                // their location. 
-                user_geoposition_lat = position.coords.latitude;
-                user_geoposition_lng = position.coords.longitude;
-
-                // every time the geolocation api updates, add the user's
-                // tweaks to the position. 
-                user_lat = lat_bnd(user_geoposition_lat, user_delta_lat);
-                user_lng = lng_bnd(user_geoposition_lng, user_delta_lng);
-
-                var accuracy = position.coords.accuracy;
-                console.log("raw geolocation position: " + user_geoposition_lat, user_geoposition_lng);
-                console.log("user deltas: " + user_delta_lat, user_delta_lng);
-                console.log("user location set to (" + user_lat + "," + user_lng + ") to accuracy of " + accuracy);
-
-                // get or create the user's identity
-                if (!localStorage["geopad_userid"]) {
-                    var userid = uuid.v4().replace(/-/g,'');
-                    var user_avatar_url = "http://www.gravatar.com/avatar/"+ userid +"?d=monsterid"
-                    localStorage["geopad_userid"] = userid;
-                    localStorage["geopad_avatar"] = user_avatar_url
-
-                }
-                username = localStorage["geopad_username"];
-
-                /**** display a map to let the user fine-tune their location ***/
-
-                // use the accuracy parameter of the geolocation API to
-                // calculate rough bounds on the location, and convert this to
-                // an error in degrees. Add 100 meters for flexibility. 
-                var flexibility_factor = 100;
-                accuracy_degrees = (accuracy + flexibility_factor)/111120;
-                console.log("accuracy_degrees: " + accuracy_degrees);
-                var southWestBound = new L.LatLng(lat_bnd(user_lat, -accuracy_degrees), lng_bnd(user_lng, -accuracy_degrees)),
-                    northEastBound = new L.LatLng(lat_bnd(user_lat, accuracy_degrees), lng_bnd(user_lng, accuracy_degrees));
-                console.log('southwest bound: ' + southWestBound);
-                console.log('northeast bound: ' + northEastBound);
-                var user_position_uncertainty = new L.LatLngBounds(southWestBound, northEastBound);
-
-                //generate the map with the computed bounds 
-                map.setView([user_lat, user_lng], 15);
-                map.setMaxBounds(user_position_uncertainty);
-                L.tileLayer('http://a.tile.stamen.com/toner/{z}/{x}/{y}.png', {
-                //L.tileLayer('http://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-                    attribution: 'Tiles by <a href="http://stamen.com">Stamen Design</a>, <a href="http://creativecommons.org/licenses/by/3.0">CC BY 3.0</a>& <a href="http://openstreetmap.org">OpenStreetMap</a>' }
-                ).addTo(map);
-                // remove the old marker and generate a new one.
-                map.removeLayer(user_location_marker);
-                user_location_marker = L.marker(
-                    [user_lat, user_lng], 
-                    {draggable: true}
-                ).addTo(map);
-                user_location_marker.bindPopup("Drag the pin to<br>fine-tune your<br>location.").openPopup();
-                user_location_marker.on('dragend', function(event) {
-                    var marker = event.target;
-                    var updated_latlng = marker.getLatLng();
-                    var new_user_delta_lat = updated_latlng.lat - user_lat;
-                    var new_user_delta_lng = updated_latlng.lng - user_lng;
-                    // update the session storage value
-                    sessionStorage.user_delta_lat = new_user_delta_lat;
-                    sessionStorage.user_delta_lng = new_user_delta_lng;
-
-                    // update the actual user position values used for
-                    // calculations, new pad creation, etc. 
-                    user_lat = updated_latlng.lat;
-                    user_lng = updated_latlng.lng;
-                    // update the list of pads based on the new location
-                    retrieve_nearby_pads(user_lat, user_lng);
-
-                    console.log('updated user position to: ' + user_lat + ", " + user_lng);
-                })
-
-            };
-
-            geo_error = function(error) {
-                console.log("Error, could not obtain location. Error " + error.code);
-            };
-
-            initial_position_callback = function(position) {
-                geo_success(position);
-                // support for a per-page callback that happens only once the
-                // initial position has been determined
-                if (typeof page_location_success_callback == 'function') {
-                    page_location_success_callback();
-                }
-            }
-            
-
-            // initially just get the position once, and then set a watch for
-            // updates. this allows for callbacks that need to be called only
-            // once, after the position has been determined. 
-            navigator.geolocation.getCurrentPosition(
-                initial_position_callback,
-                geo_error
-            );
-
-            var watch_id = navigator.geolocation.watchPosition(
-                geo_success, 
-                geo_error, 
-                {enableHighAccuracy:true}
-            );
-            
-
-            // end geoposition stuff
 
             // only show the help info if it's the user's first time on the
             // site. 
@@ -191,13 +76,14 @@ html
                 $('#n00b-help').hide();
             }
 
+            // new pad creation is available on every page
             $("#newpad").submit(function() {		
                 formdata = {
                     pad_name: $("input#name").val(),
                     pad_radius: $("input#radius").val(),
                     pad_expiry: $("input#expiry").val(),
-                    user_lat: user_lat,
-                    user_long: user_lng
+                    user_lat: page_vars.user_corrected_lat,
+                    user_long: page_vars.user_corrected_lng
                 };
                 console.log("form data:");
                 console.log(formdata);
@@ -217,7 +103,7 @@ html
                 return false;
             });
 
-            // Piwik
+            // Piwik Analytics
             var _paq = _paq || [];
             _paq.push(['trackPageView']);
             _paq.push(['enableLinkTracking']);

@@ -57,10 +57,15 @@ expiry_watch = new cronJob(hourly, function() {
 	console.log("checking for expired pads... ");
 	var now = new Date();
 	client.query(
-		"delete from active USING pad_meta WHERE pad_meta.uuid = active.uuid " + 
-		"AND pad_meta.expiry <= now() RETURNING active.uuid;", function(err, result) {
+		"select active.uuid from pad_meta, active WHERE pad_meta.uuid = active.uuid " + 
+		"AND pad_meta.expiry <= now();", function(err, result) {
 			if (result.rows.length > 0) {
-				console.log(now.toFormat("YYYY-MM-DDTHH24:MI:S") + ": removed the following " + result.rows.length + " pads from active list:");
+				// create a one-off scheduled job for each pad this hour that
+				// needs to be de-activated
+				for (pad in result.rows) {
+					//XXX schedule job here
+				}
+				console.log(now.toFormat("YYYY-MM-DDTHH24:MI:S") + ": scheduled removal of the following " + result.rows.length + " pads from active list:");
 				console.log(result.rows);
 			} else {
 				console.log(now.toFormat("YYYY-MM-DDTHH24:MI:S") + ": no pads expired at this time.");
@@ -79,16 +84,16 @@ app.get("/", function(req, res) {
 });
 
 app.get("/api/pads/nearby/", function(req, res) {
-	// return pads where the current location falls within the covered area  (origin + radius)
+	// return pads where the current location falls within the covered area
+	// (origin + radius)
 	var data = url.parse(req.url, true);
+	console.dir("retrieving nearby pads with request data:");
 	console.dir(data); 	
 
 	client.query(
-		"SELECT * FROM pad_meta INNER JOIN active ON " + 
-		"pad_meta.uuid = active.uuid where " + 
-		"ST_Intersects('POINT(" + data.query.user_long + 
-		" " + data.query.user_lat + ")'::geometry, area) ORDER BY " + 
-		"created DESC;", function(err, result) {
+		"SELECT * FROM pad_meta INNER JOIN active ON pad_meta.uuid = active.uuid where ST_Intersects('POINT(" + data.query.user_lng + 
+		" " + data.query.user_lat + ")'::geometry, area) ORDER BY created DESC;", function(err, result) {
+			console.log(result);
 			result.rows.forEach(function(item) {
 				if (item.expiry) {
 					item.expiry = item.expiry.toFormat("YYYY-MM-DDTHH24:MI:SS")

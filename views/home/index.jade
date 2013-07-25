@@ -12,14 +12,17 @@ block script
     script.
         
         // called a single time after the initial position is retrieved. 
-        page_location_success_callback = function() {
+        connections_setup = function(user_corrected_lat, user_corrected_lng) {
 
             var socket = io.connect("#{domain}"); 
 
             socket.on('connect', function() {
                 socket.emit('join', 'home');
 
-                retrieve_nearby_pads(user_lat, user_lng);
+                console.log("welcome. retrieving initial set of pads...")
+                
+                console.log(user_corrected_lat, user_corrected_lng);
+                retrieve_nearby_pads(user_corrected_lat, user_corrected_lng);
                 $("#spinner").stop().fadeOut('fast');
 
             });
@@ -36,6 +39,9 @@ block script
 
             socket.on('newpad-notify', function (data) {
                 console.log(data);
+                if ($("#nopads").length > 0) {
+                    $("#nopads").remove();
+                }
                 $("#padlist").prepend($(data).fadeIn(1000));
                 // reset the form values 
                 $("input#name").val("");
@@ -45,16 +51,9 @@ block script
     
         };
 
-        padsort_recent_activity = function() {
-        };
-
-        padsort_popularity = function() {
-        };
-
-        padsort_created = function() {
-        };
-
-
+        page_vars = new page_global_vars();
+        geolocation_launch(connections_setup, page_vars);
+        
 
         
 

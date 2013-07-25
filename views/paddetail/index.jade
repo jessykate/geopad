@@ -26,8 +26,32 @@ block content
 block script
     script.
 
+        $("#newpost").submit(function() {		
+            formdata = {
+                pad_id: $("input#pad-uuid").val(),
+                post_body: $("textarea#post-body").val(),
+                user_id: localStorage["geopad_userid"]
+            };
+            console.log("form data:");
+            console.log(formdata);
+
+            request = $.ajax({
+                data: decodeURIComponent($.param(formdata)),
+                type: "GET",
+                contentType: "application/json",
+                url: "/api/post/new/",
+            });
+            request.fail(function(msg) {
+                console.log("error:")
+                console.log(msg);
+                $("#post-error").html(msg.responseText);			
+            });
+
+            return false;
+        });
+
         // called a single time after the initial position is retrieved. 
-        page_location_success_callback = function() {
+        connections_setup = function(user_corrected_lat, user_corrected_lng) {
             
             var socket = io.connect("#{domain}"); 
 
@@ -42,31 +66,10 @@ block script
                 // reset the form values 
                 $("textarea#post-body").val("");
             });
+        };
 
-            $("#newpost").submit(function() {		
-                formdata = {
-                    pad_id: $("input#pad-uuid").val(),
-                    post_body: $("textarea#post-body").val(),
-                    user_id: localStorage["geopad_userid"]
-                };
-                console.log("form data:");
-                console.log(formdata);
-
-                request = $.ajax({
-                    data: decodeURIComponent($.param(formdata)),
-                    type: "GET",
-                    contentType: "application/json",
-                    url: "/api/post/new/",
-                });
-                request.fail(function(msg) {
-                    console.log("error:")
-                    console.log(msg);
-                    $("#post-error").html(msg.responseText);			
-                });
-
-                return false;
-            });
-        }
+        page_vars = new page_global_vars();
+        geolocation_launch(connections_setup, page_vars);
 
 
 
