@@ -93,14 +93,13 @@ app.get("/api/pads/nearby/", function(req, res) {
 	client.query(
 		"SELECT * FROM pad_meta INNER JOIN active ON pad_meta.uuid = active.uuid where ST_Intersects('POINT(" + data.query.user_lng + 
 		" " + data.query.user_lat + ")'::geometry, area) ORDER BY created DESC;", function(err, result) {
-			console.log(result);
 			result.rows.forEach(function(item) {
 				if (item.expiry) {
 					item.expiry = item.expiry.toFormat("YYYY-MM-DDTHH24:MI:SS")
 				}
 			});
 			app.render('snippets/pad_list', {pads: result.rows}, function(err, html) {
-			console.log('retrieved nearby pads. sending list to ' + io.sockets.clients('home').length + ' connected clients');
+			console.log('retrieved nearby pads. sending list to client with user_id ' + data.query.user_id);
 			io.sockets.in(data.query.user_id).emit('padlist', html)
 			res.send(200);
 		})
@@ -240,6 +239,7 @@ io.sockets.on('connection', function(socket) {
 	socket.on('join', function(room_name) {
 		console.log('client joining ' + room_name);
 		socket.join(room_name);
+		socket.in(room_name).emit('join-success-'+room_name)
 	});
 });
 

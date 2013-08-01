@@ -82,10 +82,9 @@ update_map = function(accuracy, page_vars) {
 		page_vars.user_corrected_lat = updated_latlng.lat;
 		page_vars.user_corrected_lng = updated_latlng.lng;
 
-		// update the list of pads based on the new location
-		console.log("location updated; retrieving list of nearby pads based on new location.");
+		// this has to be inside this callback! in order to be triggered by the
+		// dragging of the location marker
 		retrieve_nearby_pads(page_vars.user_corrected_lat, page_vars.user_corrected_lng);
-
 		console.log('updated user position to: ' + page_vars.user_corrected_lat + ", " + page_vars.user_corrected_lng);
 	})
 
@@ -102,6 +101,7 @@ retrieve_nearby_pads = function(user_corrected_lat, user_corrected_lng) {
 		$("#spinner").stop().fadeOut('fast');
 	});
 
+	window.alert("inside function: retrieving nearby pads...");
 	console.log("retrieving nearby pads...");
 	request = $.ajax({
 		data: {user_lat: user_corrected_lat, user_lng: user_corrected_lng, user_id: localStorage.geopad_userid},
@@ -152,7 +152,9 @@ geolocation_launch = function(connections_setup_fn, page_vars) {
 	// position object by default. we need to pass in more arguments, so these
 	// wrappers do the trick. 
 	geo_success_initial = function(position) {
+		// update the user position and map
 		geo_success_callback(position, page_vars);
+		// set up the local page connections
 		connections_setup_fn(page_vars.user_corrected_lat, page_vars.user_corrected_lng);
 	};
 	geo_success_subsequent = function(position) {
