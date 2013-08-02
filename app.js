@@ -51,8 +51,8 @@ app.locals.domain = config.domain;
  *				TASKS					   *
  * * * * * * * * * * * * * * * * * * * * * */
 
-// check for expired pads every hour on the 7th minute
-hourly = '* 1 * * * * *';
+// check for expired pads every hour on the 1st minute
+hourly = '00 01 * * * *';
 expiry_watch = new cronJob(hourly, function() {
 	console.log("checking for expired pads... ");
 	// check for 
@@ -80,9 +80,9 @@ expiry_watch = new cronJob(hourly, function() {
 						}, true);
 					}
 				}
-				console.log(now.toFormat("YYYY-MM-DDTHH24:MI:S") + ": scheduled removal of " + result.rows.length + " pads from active list.");
+				console.log(now.toFormat("YYYY-MM-DDTHH24:MI:SS") + ": scheduled removal of " + result.rows.length + " pads from active list.");
 			} else {
-				console.log((new Date()).toFormat("YYYY-MM-DDTHH24:MI:S") + ": no pads expired at this time.");
+				console.log((new Date()).toFormat("YYYY-MM-DDTHH24:MI:SS") + ": no pads expired at this time.");
 			}
 	});
 }, null, true);
