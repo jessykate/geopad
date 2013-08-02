@@ -101,7 +101,6 @@ retrieve_nearby_pads = function(user_corrected_lat, user_corrected_lng) {
 		$("#spinner").stop().fadeOut('fast');
 	});
 
-	window.alert("inside function: retrieving nearby pads...");
 	console.log("retrieving nearby pads...");
 	request = $.ajax({
 		data: {user_lat: user_corrected_lat, user_lng: user_corrected_lng, user_id: localStorage.geopad_userid},

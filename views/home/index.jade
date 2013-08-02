@@ -17,27 +17,22 @@ block script
             var socket = io.connect("#{domain}"); 
 
             socket.on('connect', function() {
+                socket.emit('join', 'home');
                 // join a room just for this user
                 socket.emit('join', localStorage.geopad_userid);
-                socket.emit('join', 'home');
-                window.alert("joining socket room for " + localStorage.geopad_userid);
 
-
-                console.log("welcome. retrieving initial set of pads...")
-                
                 console.log(user_corrected_lat, user_corrected_lng);
 
             });
 
             var user_room_success_string = "join-success-"+localStorage.geopad_userid;
             socket.on(user_room_success_string, function() {
-                window.alert("inside user room callback");
+                console.log("welcome. retrieving initial set of pads...")
                 retrieve_nearby_pads(user_corrected_lat, user_corrected_lng);
                 $("#spinner").stop().fadeOut('fast');
             });
 
             socket.on('padlist', function (data) {
-                window.alert(data);
                 console.log('retrieved list of pads.');
                 padlist = data;
                 pads_recent_activity = [];

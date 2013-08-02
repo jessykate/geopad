@@ -52,21 +52,35 @@ app.locals.domain = config.domain;
  * * * * * * * * * * * * * * * * * * * * * */
 
 // check for expired pads every hour on the 7th minute
-hourly = '* 7 * * * *';
+hourly = '* 7 * * * * *';
 expiry_watch = new cronJob(hourly, function() {
 	console.log("checking for expired pads... ");
-	var now = new Date();
-	client.query(
-		"select active.uuid from pad_meta, active WHERE pad_meta.uuid = active.uuid " + 
-		"AND pad_meta.expiry <= now();", function(err, result) {
+	// check for 
+	var in_the_next_hour = new Date();
+	in_the_next_hour.add({hours:1});
+	expiring_query = "select active.uuid, pad_meta.expiry from pad_meta, active WHERE pad_meta.uuid = active.uuid AND pad_meta.expiry <= $1"; 
+	expiring_args = [in_the_next_hour,];
+	client.query(expiring_query, expiring_args, function(err, result) {
 			if (result.rows.length > 0) {
 				// create a one-off scheduled job for each pad this hour that
-				// needs to be de-activated
-				for (pad in result.rows) {
-					//XXX schedule job here
+				// needs to be de-activated (also looks out for any
+				// previously expired pads that were missed for any reason).
+				var now = new Date();
+				for (idx in result.rows) {
+					pad = result.rows[idx];
+					console.log("a pad expiring this hour:");
+					console.log(pad);
+					if (pad.expiry <= now ) {
+						client.query("delete from active where uuid='" + pad.uuid + "';");
+					} else {
+						var at_expiry_time = pad.expiry;
+						console.log("scheduling expiry of pad " + pad.uuid + " at " + at_expiry_time);
+						new cronJob(at_expiry_time, function() {
+							client.query("delete from active where uuid='" + pad.uuid + "';");
+						}, true);
+					}
 				}
-				console.log(now.toFormat("YYYY-MM-DDTHH24:MI:S") + ": scheduled removal of the following " + result.rows.length + " pads from active list:");
-				console.log(result.rows);
+				console.log(now.toFormat("YYYY-MM-DDTHH24:MI:S") + ": scheduled removal of " + result.rows.length + " pads from active list.");
 			} else {
 				console.log(now.toFormat("YYYY-MM-DDTHH24:MI:S") + ": no pads expired at this time.");
 			}
