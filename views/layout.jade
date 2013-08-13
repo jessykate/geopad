@@ -6,25 +6,51 @@ html
     body
         block titlearea
 
-            .sitetitle#app-name
-                h1#app-name-header 
-                    a#homelink(href="/") Geopad
-                
             #user-map-wrapper
                 #user-map
 
-            .sitetitle
-                h3.subheading
-                    img.header-logo(src="/img/Location-Icon.jpeg")
-                    | Location-specific notepads shared with people nearby.
-                p
-                    small.text-error Warning! 
-                    small.text-warning.
-                        This is in-progress software. Database will be deleted
-                        frequently and with no warning. Use for testing only. 
+            header
+
+                .sitetitle#app-name
+                    h1#app-name-header 
+                        a#homelink(href="/") Geopad
+                    
+                .sitetitle
+                    h3.subheading
+                        img.header-logo(src="/img/Location-Icon.jpeg")
+                        | Location-specific notepads for yourself and others nearby. 
+                        a#n00b-help-btn(title="help", href="#n00b-help", role="button", data-toggle="modal") [ ? ]
+                    p
+                        small.text-error Warning! 
+                        small.text-warning.
+                            Alpha software. Your mileage may vary, use at your own risk, etc. 
+                            <a href="https://github.com/jessykate/geopad/issues" target="blank">Send feedback</a>
+
+                #n00b-help.modal.hide.fade 
+                    .modal-header
+                        h3 About Geopads
+                        button.close(type="button",data-dismiss="modal", aria-hidden="true")
+                            i.icon-close#help-close
+                    .modal-body
+                        ul
+                            li 
+                                h3.subheading Geopads are an easy way to share or chat with people nearby, or leave yourself private notes around your world. 
+                            li 
+                                h3.subheading Browse through existing geopads or create your own
+                            li 
+                                h3.subheading You can only see notepads that are nearby! (But you can always go back to look at notepads you have viewed in the past.) 
 
 
 
+                #newpost-wrapper
+                    form#newpad(action="/api/pad/new/", method="GET")
+                        input#newpad-post(type="input", name="post")(placeholder="Post to new pad")
+                        select#pad-selection-dropdown(name="padid")
+                            option(value="newpad") New Pad...
+                        input(type="hidden", id="newpad-user-lat", name="user_lat", value=null)
+                        input(type="hidden", id="newpad-user-lng", name="user_lng", value=null)
+                        input(type="hidden", id="newpad-user-id", name="user_id", value=null)
+                        input(type="submit", value="Make it So", id="newpost-submit")
 
         // Wrap all page content here
         .container#wrap#page-content
@@ -33,32 +59,13 @@ html
                 img(src="/img/ajax_loader_large.gif", alt="Loading...")
 
 
-            #n00b-help.alert
-                a.close(data-dismiss="alert", href="#") 
-                    i.icon-remove
-                ul
-                    li 
-                        h3.subheading Geopads are an easy way to share or chat with people nearby
-                    li 
-                        h3.subheading Browse through existing geopads or create your own
-                    li 
-                        h3.subheading You can only see notepads that are nearby! (But you can always go back to look at notepads you have viewed in the past.) 
-
-
             block content
 
-            #footer.navbar-fixed-bottom
-                .container
-                    h3.subheading I Want a New One!
-                    form#newpad(action="/api/pad/new/", method="GET")
-                        input.newfog-input-name#name(type="text", name="name", placeholder="Pad Name")
-                        input.newfog-input-radius#radius(type="number", name="radius", placeholder="Radius (m)")
-                        input.newfog-input-expiry#expiry(type="number", name="expiry", placeholder="Expiry (hours)")
-                        input.btn(type="submit") Create
-                    div.pull-right
-                        a(href="https://github.com/jessykate/geopad/issues") Ideas/Suggestions
 
         script.
+
+            // focus the new post input field
+            $("#newpad-post").focus();
 
             // the app creates a random identity for the user stored in
             // LocalStorage.
@@ -70,38 +77,13 @@ html
                 $(".relative-date").timeago();
             });
 
-            // only show the help info if it's the user's first time on the
-            // site. 
-            if(localStorage["geopad_userid"]) {
-                $('#n00b-help').hide();
-            }
-
-            // new pad creation is available on every page
-            $("#newpad").submit(function() {		
-                formdata = {
-                    pad_name: $("input#name").val(),
-                    pad_radius: $("input#radius").val(),
-                    pad_expiry: $("input#expiry").val(),
-                    user_lat: page_vars.user_corrected_lat,
-                    user_long: page_vars.user_corrected_lng
-                };
-                console.log("form data:");
-                console.log(formdata);
-
-                request = $.ajax({
-                    data: decodeURIComponent($.param(formdata)),
-                    type: "GET",
-                    contentType: "application/json",
-                    url: "/api/pad/new/",
-                });
-                request.fail(function(msg) {
-                    console.log("error:")
-                    console.log(msg);
-                    $("#pad-error").html(msg.responseText);			
-                });
-
-                return false;
+            $("#newpad").submit(function() {
+                $("#newpad-user-lat").val(page_vars.user_corrected_lat);
+                $("#newpad-user-lng").val(page_vars.user_corrected_lng);
+                $("#newpad-user-id").val(localStorage.geopad_userid);
+                return true;
             });
+
 
             // Piwik Analytics
             var _paq = _paq || [];

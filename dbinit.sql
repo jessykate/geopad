@@ -14,6 +14,8 @@ CREATE TABLE IF NOT EXISTS pad_meta (
   area GEOMETRY(Polygon),
   expiry TIMESTAMP,
   salt CHAR(10),
+  creator CHAR(32),
+  private BOOLEAN DEFAULT FALSE,
   password VARCHAR(64),
   PRIMARY KEY (uuid)
 );
@@ -25,3 +27,24 @@ CREATE TABLE IF NOT EXISTS active (
 	uuid CHAR(32), 
 	foreign key (uuid) references pad_meta(uuid)
 );
+
+CREATE TABLE IF NOT EXISTS membership (
+	padid CHAR(32),
+	userid CHAR(32),
+	owner BOOLEAN,
+	PRIMARY KEY (padid, userid)
+);
+
+CREATE INDEX membership_padid_index ON membership (padid);
+CREATE INDEX membership_userid_index ON membership (userid);
+
+
+CREATE TABLE IF NOT EXISTS userprofile (
+	userid CHAR(32) PRIMARY KEY,
+	name VARCHAR,
+	email VARCHAR(256),
+	publickey CHAR(2048),
+	privatekey CHAR(2048)
+);
+
+

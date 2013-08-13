@@ -55,12 +55,12 @@ h1,h2 {
 }
 
 .sitetitle {
-	max-width: 680px;
-	margin: auto;
+	/* max-width: 680px; */
+	/* margin: auto; */
 }
 
 #app-name {
-	margin-top: 40px;
+	/* margin-top: 40px; */
 }
 
 .subheading {
@@ -90,6 +90,7 @@ input, button, select {
 	font-family: 'VT323', cursive;
 	font-weight: bold;
 	font-size: 17px;
+	padding-top: 15px;
 }
 
 .pad-meta {
@@ -109,11 +110,6 @@ input, button, select {
 	font-size: 30px;
 	font-family: 'Lato', sans-serif;
 	font-weight: 100;
-}
-
-#newpost-wrapper {
-	margin-top: 30px;
-	margin-bottom: 30px;
 }
 
 #post-body {
@@ -139,16 +135,19 @@ input, button, select {
 }
 
 #user-map {
-	margin: 40px 40px 0 0;
-	height: 250px;
-	width: 250px;
+	height: 180px;
+}
+
+#n00b-help-btn {
+	margin-left: 10px; 
+}
+
+#n00b-help-btn:hover {
+	text-decoration:none;
 }
 
 #user-map-wrapper {
-	position: relative;
-	top: -30px;
-	right: 40px;
-	float: right;
+	padding-bottom: 30px;
 }
 
 #spinner {
@@ -167,4 +166,39 @@ input, button, select {
 
 #pad-title {
 	font-weight: normal;
+}
+
+#action-bar {
+    /* width: 60%; */
+    /* margin: auto; */
+    margin-top: 30px;
+}
+
+header {
+    max-width: 80%;
+    margin: auto;
+}
+
+#newpost {
+	width: 20%;
+	margin-right: 10px;
+}
+
+#newpost-wrapper {
+	font-size: 20px;
+	margin-bottom: 30px;
+}
+
+[contenteditable="true"] { 
+	padding: 10px; 
+	outline: 2px dashed #CCC; 
+} 
+
+[contenteditable="true"]:hover { 
+	outline: 2px dashed #0090D2; 
+	background-color: rgba(255, 255, 153, 1);
+}
+
+#expiry-wrapper {
+	display: none;
 }

@@ -47,9 +47,9 @@ update_map = function(accuracy, page_vars) {
 
 	// use the accuracy parameter of the geolocation API to
 	// calculate rough bounds on the location, and convert this to
-	// an error in degrees. Add 100 meters for flexibility and
-	// convert these to bounds on the map. . 
-	var flexibility_factor = 100;
+	// an error in degrees. Add some number of meters for flexibility and
+	// convert these to bounds on the map. 
+	var flexibility_factor = 200;
 	var accuracy_degrees = (accuracy + flexibility_factor)/111120;
 	console.log("accuracy_degrees: " + accuracy_degrees);
 	var southWestBound = new L.LatLng(lat_bnd(page_vars.user_corrected_lat, -accuracy_degrees), lng_bnd(page_vars.user_corrected_lng, -accuracy_degrees));
@@ -58,8 +58,8 @@ update_map = function(accuracy, page_vars) {
 	console.log('northeast bound: ' + northEastBound);
 	var user_position_uncertainty = new L.LatLngBounds(southWestBound, northEastBound);
 
-	page_vars.map.setView([page_vars.user_corrected_lat, page_vars.user_corrected_lng], 15);
-	page_vars.map.setMaxBounds(user_position_uncertainty);
+	page_vars.map.setView([page_vars.user_corrected_lat, page_vars.user_corrected_lng], 17);
+	//page_vars.map.setMaxBounds(user_position_uncertainty);
 
 	// remove the old marker and generate a new one. (XXX should be a better way to do this!)
 	page_vars.map.removeLayer(page_vars.user_location_marker);
@@ -68,7 +68,7 @@ update_map = function(accuracy, page_vars) {
 		{draggable: true}
 	).addTo(page_vars.map);
 
-	page_vars.user_location_marker.bindPopup("Drag the pin to<br>fine-tune your<br>location.").openPopup();
+	page_vars.user_location_marker.bindPopup("Drag the pin to fine-tune<br>your location.").openPopup();
 	page_vars.user_location_marker.on('dragend', function(event) {
 		var updated_latlng = event.target.getLatLng();
 		var new_user_delta_lat = updated_latlng.lat - page_vars.user_corrected_lat;
@@ -160,18 +160,10 @@ geolocation_launch = function(connections_setup_fn, page_vars) {
 		geo_success_callback(position, page_vars);
 	};
 
-	// initially just get the position once, and then set a watch for
-	// updates. this allows for callbacks that need to be called only
-	// once, after the position has been determined. 
+	// get the position once when the page is called. 
 	navigator.geolocation.getCurrentPosition(
 		geo_success_initial,
 		geo_error,
-		{enableHighAccuracy:true}
-	);
-
-	var watch_id = navigator.geolocation.watchPosition(
-		geo_success_subsequent, 
-		geo_error, 
 		{enableHighAccuracy:true}
 	);
 	
