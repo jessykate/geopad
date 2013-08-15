@@ -59,7 +59,7 @@ update_map = function(accuracy, page_vars) {
 	//console.log('northeast bound: ' + northEastBound);
 	//var user_position_uncertainty = new L.LatLngBounds(southWestBound, northEastBound);
 
-	page_vars.map.setView([page_vars.user_corrected_lat, page_vars.user_corrected_lng], 16);
+	page_vars.map.setView([page_vars.user_corrected_lat, page_vars.user_corrected_lng], 18);
 	//page_vars.map.setMaxBounds(user_position_uncertainty);
 
 	// who knows why but the leaflet coordinate system seems to start from the
@@ -70,7 +70,7 @@ update_map = function(accuracy, page_vars) {
 			new L.Point(x_offset, y_offset));
 	console.log("div offset is:");
 	console.log(div_offset);
-	page_vars.map.panTo(div_offset, 16);
+	page_vars.map.panTo(div_offset, 18);
 
 	// remove the old marker and generate a new one. (XXX should be a better way to do this!)
 	page_vars.map.removeLayer(page_vars.user_location_marker);
