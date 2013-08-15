@@ -1,11 +1,20 @@
-.pad-meta-data 
-    span #{pad.radius} m 
+.pad-meta-data
+    h3.fog-meta-name.subheading
+        a.foglink(href="/pad/" + pad.uuid) #{pad.name}
+
+    span#pad-radius-in-list 
+        if pad.radius == 50 
+            | Building 
+        if pad.radius == 500 
+            | City Block 
+        if pad.radius == 2000
+            | Neigbourhood 
+        if pad.radius == 10000 
+            | City  
+
     if pad.expiry 
         / Expires 
         span.relative-date(title="#{pad.expiry}") #{pad.expiry}
-
-    h3.fog-meta-name.subheading
-        a.foglink(href="/pad/" + pad.uuid) #{pad.name}
 
     hr
 
@@ -13,3 +22,4 @@
         $(document).ready(function() {
             $(".relative-date").timeago();
         });
+

@@ -4,7 +4,17 @@ block content
 
     #newbinfo
     
-    #container
+    #newpost-wrapper
+        form.form-inline#newpad(action="/api/pad/new/", method="GET")
+            textarea#newpad-post(name="post",placeholder="Create a New Pad...")
+            input(type="hidden", id="newpad-user-lat", name="user_lat", value=null)
+            input(type="hidden", id="newpad-user-lng", name="user_lng", value=null)
+            input(type="hidden", id="newpad-user-id", name="user_id", value=null)
+            input.btn.btn-large#newpad-submit(type="submit", value="Make it So")
+
+    h2#pad-list-title Browse
+
+    #main-page-container
         #pad-error			
         #padlist Searching for nearby pads...
 
@@ -40,11 +50,6 @@ block script
                 pads_created = [];
                 
                 $("#padlist").html(pad_html);
-                for (var p in pad_list) {
-                    $("#pad-selection-dropdown").append(
-                        "<option value='" + pad_list[p].uuid + "'>" + pad_list[p].name + "</option>"
-                    );
-                }
             });
 
             socket.on('newpad-notify', function (data) {

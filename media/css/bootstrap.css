@@ -1069,7 +1069,7 @@ textarea {
 }
 
 label {
-  display: block;
+  display: inline;
   margin-bottom: 5px;
 }
 
@@ -4358,10 +4358,11 @@ input[type="submit"].btn.btn-mini {
   *z-index: 2;
   margin-bottom: 20px;
   overflow: visible;
+  margin-top: 50px;
 }
 
 .navbar-inner {
-  min-height: 40px;
+  min-height: 29px;
   padding-right: 20px;
   padding-left: 20px;
   background-color: #fafafa;

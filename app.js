@@ -5,14 +5,13 @@ var pg = require('pg');
 var url = require('url'); // hack to workaround non-working POST request
 var dateutils = require('date-utils');
 var uuid = require('node-uuid');
-var config = require('./config.js')
+var config = require('./config.js');
+var lib = require('./lib.js');
 var cronJob = require('cron').CronJob;
 
 /* * * * * * * * * * * * * * * * * * * * * * 
  *				APP SETUP				   *
  * * * * * * * * * * * * * * * * * * * * * */
-
-
 
 // divide a value in meters by this number to convert it to approximate
 // degrees. one degree is approximately 111.12 kilometers or 111120 meters
@@ -115,9 +114,9 @@ app.get("/api/pads/nearby/", function(req, res) {
 	console.dir("retrieving nearby pads with request data:");
 	console.dir(data); 	
 
-	client.query(
-		"SELECT * FROM pad_meta INNER JOIN active ON pad_meta.uuid = active.uuid where ST_Intersects('POINT(" + data.query.user_lng + 
-		" " + data.query.user_lat + ")'::geometry, area) ORDER BY created DESC;", function(err, result) {
+	nearby_query_string = "SELECT * FROM pad_meta INNER JOIN active ON pad_meta.uuid = active.uuid where ST_Intersects(ST_GeomFromText('POINT(" + data.query.user_lng + " " + data.query.user_lat + ")', 4326), area) ORDER BY created DESC;"
+	console.log(nearby_query_string);
+	client.query(nearby_query_string, function(err, result) {
 		if (!err) {
 			result.rows.forEach(function(item) {
 				if (item.expiry) {
@@ -187,24 +186,40 @@ app.get("/api/pad/settings", function(req, res) {
 	var radius_meters = parseInt(data.query.radius);
 	var radius_degrees = radius_meters/METERS_TO_DEGREES;
 
-	if (data.query.expiry) {		
-		var expiry_timestamp = new Date();
-		expiry_timestamp.setHours(expiry_timestamp.getHours() + parseInt(data.query.expiry));
-		console.log(expiry_timestamp);
+	if (data.query.expiry == parseInt(data.query.expiry)) {
+		if (data.query.expiry == 0) {		
+			var expiry_timestamp = null;
+		} else {		
+			var expiry_timestamp = new Date();
+			expiry_timestamp.setHours(expiry_timestamp.getHours() + parseInt(data.query.expiry));
+		} 
 	} else {
-		var expiry_timestamp = null;
+		// don't update the expiry setting, but since the time is displayed in
+		// local timezone on the client size, we need to re-incorporate that
+		// data back into the real timestamp (probably a better way to do
+		// this....)
+		var expiry_timestamp = new Date(data.query.expiry);
+		expiry_timestamp.setHours(expiry_timestamp.getHours() + (expiry_timestamp.getTimezoneOffset()/60))
 	}
+	console.log("expiry timestamp set to:");
+	console.log(expiry_timestamp);
 		
-	var padmeta_insert_string = "update pad_meta set (name, expiry, radius, area) = ($1, $2, $3, (SELECT ST_Buffer(origin, $4) from pad_meta where uuid=$5)) where uuid=$6 RETURNING name, radius, expiry";
-	var padmeta_insert_args = [data.query.name, expiry_timestamp, radius_meters, radius_degrees, data.query.pad_id, data.query.pad_id]
+	var padmeta_insert_string = "update pad_meta set (name, expiry, radius, area) = ($1, $2, $3, ST_Buffer((SELECT origin from pad_meta where uuid=$4), $5)) where uuid=$6 RETURNING uuid, name, radius, expiry";
+	var padmeta_insert_args = [data.query.name, expiry_timestamp, radius_meters, data.query.pad_id, radius_degrees, data.query.pad_id]
 	client.query(padmeta_insert_string, padmeta_insert_args, function(err, result) {
 		if (!err) {
 			if (result.rows[0].expiry != null) {
-				pad_meta = {name: result.rows[0].name, radius: result.rows[0].radius, expiry: result.rows[0].expiry.toFormat("YYYY-MM-DDTHH24:MI:S")};
+				pad_meta = {uuid: result.rows[0].uuid, name: result.rows[0].name, radius: result.rows[0].radius, expiry: result.rows[0].expiry.toFormat("YYYY-MM-DDTHH24:MI:S")};
 			} else {
-				pad_meta = {name: result.rows[0].name, radius: result.rows[0].radius, expiry: result.rows[0].expiry}
+				pad_meta = {uuid: result.rows[0].uuid, name: result.rows[0].name, radius: result.rows[0].radius, expiry: result.rows[0].expiry}
 			}
-			socket.in(pad_meta.uuid).emit(pad_meta);
+			console.log("updated pad, returning new settings to clients.");
+			console.log(pad_meta);
+			// need to return updated settings to anyone nearby - people nearby
+			// in homepage, in the pad, or even in other pads nearby. 
+			io.sockets.in(pad_meta.uuid).emit('pad-settings-update', pad_meta);
+			io.sockets.in('home').emit('pad-settings-update', pad_meta);
+			res.send(200);
 		} else { 
 			console.log("error updating pad:");
 			console.log(err);
@@ -231,69 +246,75 @@ app.get("/api/pad/new", function(req, res) {
 	// radius in degrees too. 
 	var radius_degrees = default_radius_meters/METERS_TO_DEGREES;
 	// we'll get pad metadata either from a newly created pad or an existing one. 
-	var pad_meta;
+	var pad_meta, the_uuid;
 
-	if (data.query.padid == "newpad") {
-		// use a uuid for the table's primary key
-		var the_uuid = uuid.v4().replace(/-/g,'');
-		// create an entry in the pad metadata table for this pad
-		var padmeta_insert_string = "INSERT INTO pad_meta (uuid, created, updated, name, origin, radius, area, expiry, creator) VALUES ($1, now(), now(), $2, ST_GeomFromText('POINT(" + data.query.user_lng + " " + data.query.user_lat + ")', 26910), $3, ST_Buffer(ST_GeomFromText('POINT(" + data.query.user_lng + " " + data.query.user_lat + ")'), $4), $5, $6) RETURNING name, uuid, creator, radius, expiry";
-		var padmeta_insert_args = [the_uuid, "untitled", default_radius_meters, radius_degrees, expiry_timestamp, data.query.user_id]
-			
-		client.query(padmeta_insert_string, padmeta_insert_args, function(err, result) {
-			if (!err) {
-				pad_meta = {name: result.rows[0].name, uuid: result.rows[0].uuid, creator: result.rows[0].creator, radius: result.rows[0].radius, expiry: result.rows[0].expiry.toFormat("YYYY-MM-DDTHH24:MI:S")}
-				console.log("result of insert:");
-				console.log(result.rows[0]);
+	// use a uuid for the table's primary key
+	the_uuid = uuid.v4().replace(/-/g,'');
+	console.log("creating new pad id: " + the_uuid);
+	// create an entry in the pad metadata table for this pad
+	var padmeta_insert_string = "INSERT INTO pad_meta (uuid, created, updated, name, origin, radius, area, expiry, creator) VALUES ($1, now(), now(), $2, ST_GeomFromText('POINT(" + data.query.user_lng + " " + data.query.user_lat + ")', 4326), $3, ST_Buffer(ST_GeomFromText('POINT(" + data.query.user_lng + " " + data.query.user_lat + ")', 4326), $4), $5, $6) RETURNING name, uuid, creator, radius, expiry";
+	var padmeta_insert_args = [the_uuid, "untitled", default_radius_meters, radius_degrees, expiry_timestamp, data.query.user_id]
+		
+	client.query(padmeta_insert_string, padmeta_insert_args, function(err, result) {
+		if (!err) {
+			pad_meta = {name: result.rows[0].name, uuid: result.rows[0].uuid, creator: result.rows[0].creator, radius: result.rows[0].radius, expiry: result.rows[0].expiry.toFormat("YYYY-MM-DDTHH24:MI:S")}
+			console.log("result of insert:");
+			console.log(result.rows[0]);
 
-				// for new pads, update the membership table adding the creator as a pad owner
-				var membership_insert_string = "INSERT INTO membership (padid, userid, owner) VALUES ($1, $2, TRUE)";
-				var membership_insert_args = [pad_meta.uuid, pad_meta.creator];
-				client.query(membership_insert_string, membership_insert_args, function(err, result) {
-					if (err) {
-						console.log("insert into membership table failed with the following output:");
-						console.log(err);
-						console.log("#1 closing db client connection");
-						client.end();
-					}
-				});
+			// for new pads, update the membership table adding the creator as a pad owner
+			var membership_insert_string = "INSERT INTO membership (padid, userid, owner) VALUES ($1, $2, TRUE)";
+			var membership_insert_args = [pad_meta.uuid, pad_meta.creator];
+			client.query(membership_insert_string, membership_insert_args, function(err, result) {
+				if (err) {
+					console.log("insert into membership table failed with the following output:");
+					console.log(err);
+					console.log("#1 closing db client connection");
+					client.end();
+				}
+			});
 
-				// create the table for this pad
-				var table_name = "pad_" + the_uuid;
-				var paddetail_insert_string = "CREATE TABLE IF NOT EXISTS "+ table_name +" (id SERIAL PRIMARY KEY, created TIMESTAMP, body TEXT, userid CHAR(32) )";
-				client.query(paddetail_insert_string, function(err, result) {
-					if (!err) {
-						var active_insert_string = "INSERT INTO active (uuid) VALUES ($1)";
-						var active_insert_args = [the_uuid];
-						client.query(active_insert_string, active_insert_args, function(err, result) {
-							if (err) {
-								console.log("error inserting into table 'active'");
-								console.log(err);
-								console.log("#3 closing db client connection");
-								client.end();
-								res.send(500);
-							}
-						});
-					} else {
-						console.log("error creating table 'pad_" + the_uuid +"'");
-						console.log(err);
-						console.log("#4 closing db client connection");
-						client.end();
-						res.send(500);
-					}
-				});
-			} else {
-				console.log("error inserting into table 'pad_meta'");
-				console.log(err);
-				console.log("#5 closing db client connection");
-				client.end();
-				res.send(500);
-			}
-		});
-	} else {
+			// create the table for this pad
+			var table_name = "pad_" + the_uuid;
+			var paddetail_insert_string = "CREATE TABLE IF NOT EXISTS "+ table_name +" (id SERIAL PRIMARY KEY, created TIMESTAMP, body TEXT, userid CHAR(32) )";
+			client.query(paddetail_insert_string, function(err, result) {
+				if (!err) {
+					var active_insert_string = "INSERT INTO active (uuid) VALUES ($1)";
+					var active_insert_args = [the_uuid];
+					client.query(active_insert_string, active_insert_args, function(err, result) {
+						if (!err) {
+							lib.add_post_to_pad(client, data, pad_meta, io, res);
+						} else {
+							console.log("error inserting into table 'active'");
+							console.log(err);
+							console.log("#3 closing db client connection");
+							client.end();
+							res.send(500);
+						}
+					});
+				} else {
+					console.log("error creating table 'pad_" + the_uuid +"'");
+					console.log(err);
+					console.log("#4 closing db client connection");
+					client.end();
+					res.send(500);
+				}
+			});
+		} else {
+			console.log("error inserting into table 'pad_meta'");
+			console.log(err);
+			console.log("#5 closing db client connection");
+			client.end();
+			res.send(500);
+		}
+	});
+
+		/* } else {
+		// we're working with an existing pad
+		the_uuid = data.query.padid;
 		client.query("select name, uuid, creator, radius, expiry from pad_meta where uuid='" + the_uuid + "'", function(err, result) {
 			if (!err) {
 				pad_meta = {name: result.rows[0].name, uuid: result.rows[0].uuid, creator: result.rows[0].creator, radius: result.rows[0].radius, expiry: result.rows[0].expiry.toFormat("YYYY-MM-DDTHH24:MI:S")};
+				lib.add_post_to_pad(client, data, pad_meta, io, res);
 			} else {
 				console.log("error selecting from table 'pad_meta'");
 				console.log(err);
@@ -303,29 +324,8 @@ app.get("/api/pad/new", function(req, res) {
 			}
 		});
 	}
+	*/
 
-	// add the post content to the new/selected pad
-	var the_uuid = data.query.pad;
-
-	var post_insert_string = "INSERT INTO pad_"+ the_uuid +"(created, body, userid) VALUES (now(), $1, $2) RETURNING id, created, body, userid";
-	var post_insert_args = [data.query.post, data.query.user_id];
-	client.query(post_insert_string, post_insert_args, function(err, result) {
-		if (!err) {
-			res.render('snippets/pad_meta', {pad: pad_meta}, function(err, html) {
-				console.log("pad created. html being sent:");
-				console.log(html);
-				// notify other clients on the homepage of the new pad
-				io.sockets.in('home').emit('newpad-notify', html);
-			});				
-			// redirect the client that created the pad to the pad page
-			res.redirect('/pad/'+ pad_meta.uuid + '/');
-		} else {
-			console.log(err);
-			res.send(500);
-		}
-		console.log("#2 closing db client connection");
-		client.end();
-	});
 })
 
 // must go *after* the /api/pad/new due to regex matching

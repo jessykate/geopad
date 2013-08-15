@@ -169,6 +169,23 @@ geolocation_launch = function(connections_setup_fn, page_vars) {
 	
 };
 
+updatePadSettings = function(pad_uuid) {
+	formdata = {
+		'user_id': localStorage.geopad_userid,
+		'pad_id' : pad_uuid,
+		'radius' : $("input:radio[name=pad-radius]:checked").val(),
+		'expiry' : $("input:radio[name=pad-expiry]:checked").val(),
+		'name' : $("#pad-title").text()
+	};
+	console.log("sending pad settings to server");
+	console.log(formdata);
+	$.ajax({
+		data: formdata,
+		type: "GET",
+		contentType: "application/json",
+		url: "/api/pad/settings"
+	});
+};
 
 
 padsort_recent_activity = function() {

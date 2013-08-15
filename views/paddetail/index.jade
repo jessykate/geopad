@@ -2,33 +2,35 @@ extends ../layout
 
 block content
 
-    #container
+    #pad-page-container
         #pad-header
-            h1#pad-title #{pad.name} 
             .pad-meta-data 
-                span#pad-radius #{pad.radius}
-                span m 
-                / Expires 
-                span
-                    if pad.expiry         
-                        span.relative-date#pad-expiry(title="#{pad.expiry}") #{pad.expiry}
-                    else
-                        span.relative-data#pad-expiry No expiry
-                    #expiry-wrapper
-                        select#expiry-options(name="padid")
-                            option(value="24") 24 hours
-                            option(value="168") 1 week
-                            option(value="744") 1 month
-                            option(value="") Never
+                h1#pad-title #{pad.name}
+                #radius-wrapper Size: 
+                    span#pad-radius-static
+                        if pad.radius == 50 
+                            | Building 
+                        if pad.radius == 500 
+                            | City Block 
+                        if pad.radius == 2000
+                            | Neigbourhood 
+                        if pad.radius == 10000 
+                            | City  
 
-
+                #expiry-wrapper Expires:  
+                    span#pad-expiry-static.relative-date(title="#{pad.expiry}") 
+                        if pad.expiry
+                            #{pad.expiry}
+                        else
+                            | No Expiry
         hr
 
         form#newpost(action="/api/post/new/", method="GET")
             textarea#post-body
             input#pad-uuid(type="hidden", name="pad_id", value="#{pad.uuid}") 
-            br
-            input.btn(type="submit", value="Post")
+            input.btn#newpost-submit(type="submit", value="Post")
+
+        .clear
 
         #post-error
         #postlist
@@ -62,10 +64,6 @@ block script
             return false;
         });
 
-        $("#pad-expiry").click(function() {
-            $("#expiry-wrapper").show();
-        });
-
 
         // called a single time after the initial position is retrieved. 
         connections_setup = function(user_corrected_lat, user_corrected_lng) {
@@ -75,6 +73,7 @@ block script
             // register the socket callbacks for this page and join the
             // appropriate rooms. 
             socket.on('connect', function() {
+                // join a room for this pad
                 socket.emit('join', "#{pad.uuid}");
                 // join a room just for this user
                 socket.emit('join', localStorage.geopad_userid);
@@ -89,35 +88,93 @@ block script
 
             socket.on('owner-proclaim', function() {
                 console.log("woohoo, you're an owner of this pad.");
-                //$("#pad-header").css();
+                $("#pad-header").prepend(''+
+                    '<div class="alert">' +
+                    '<button type="button" class="close" data-dismiss="alert"><i class="icon-remove" id="help-remove"></i></button>' +
+                    '<p>You are an owner of this pad. You can customize the name and settings.</p>' +
+                    '</div>' 
+                )
                 // make the pad settings editable
-                $("#pad-title,#pad-radius,#pad-expiry").attr("contenteditable", true)
-                $("#pad-title,#pad-radius,#pad-expiry").keypress(function(event) {
+                $("#pad-title").attr("contenteditable", true)
+                $("#radius-wrapper").html('Size: <span id="radius-human-name"></span>' + 
+                        '<span id="radius-options">' +
+                        '<input type="radio" name="pad-radius" value="50" id="radius_building">' +
+                        '<label for="radius_building">[Building]</label>' +
+                        
+                        '<input type="radio" name="pad-radius" value="500" id="radius_cityblock">' +
+                        '<label for="radius_cityblock">[City Block]</label>' +
+                        
+                        '<input type="radio" name="pad-radius" value="2000" id="radius_neighbourhood">' +
+                        '<label for="radius_neighbourhood">[Neighbourhood]</label>' +
+                        
+                        '<input type="radio" name="pad-radius" value="10000" id="radius_city">' +
+                        '<label for="radius_city">[City]</label>' +
+                        
+                        '</span>'
+                );
+
+                $("#radius-options>input[value=#{pad.radius}]").attr('checked', true);
+                
+                $("#expiry-wrapper").html('Expires: ' +
+                    '<span id="expiry-options">' +
+                        '<input type="radio" name="pad-expiry" id="expiry-current" class="relative-date"" value="#{pad.expiry}" checked>' +  
+                        '<label for="expiry-current" id="expiry-current-label" title="#{pad.expiry}">[#{pad.expiry}]</label>' +
+
+                        '<input type="radio" name="pad-expiry" id="expiry-day" value="24">' +
+                        '<label for="expiry-day">[1 day] </label>' +
+                        
+                        '<input type="radio" name="pad-expiry" id="expiry-week" value="168">' +
+                        '<label for="expiry-week">[1 week]</label>' +
+                        
+                        '<input type="radio" name="pad-expiry" id="expiry-month" value="744">' +
+                        '<label for="expiry-month">[1 month]</label>' +
+                        
+                        '<input type="radio" name="pad-expiry" id="expiry-none" value="0">' +
+                        '<label for="expiry-none">[No Expiry]</label>'
+                );
+
+                if (!"#{pad.expiry}") {
+                    $("#expiry-current").remove();
+                    $("#expiry-current-label").remove();
+                    $("#expiry-none").attr("checked", true);
+                } else {
+                    $("#expiry-current-label").timeago();
+                    $("#expiry-current-label").prepend("[");
+                    $("#expiry-current-label").append("]");
+                }
+
+                $("#pad-title").keypress(function(event) {
                     if (event.which == 13) {
-                        var setting = $(this).attr("id");
-                        var new_val = $(this).text();
-                        formdata = {
-                            'user_id': localStorage.geopad_userid,
-                            'pad_id' : '#{pad.uuid}',
-                            'radius' : $("#pad-radius").text(),
-                            'expiry' : $("#pad-expiry").attr("title"),
-                            'name' : $("#pad-title").text()
-                        };
-                        $.ajax({
-                            data: formdata,
-                            type: "GET",
-                            contentType: "application/json",
-                            url: "/api/pad/settings"
-                        });
+                        updatePadSettings('#{pad.uuid}');
                         return false;
                     }
                 });
+                
+                $("#radius-options,#expiry-options").change(function() {
+                    updatePadSettings('#{pad.uuid}');
+                    return false;
+                })
             });
 
-            socket.on('#{pad.uuid}', function(data) {
-                console.log("updated pad settings:");
-                console.log(data);
+            socket.on('pad-settings-update', function(pad_meta) {
+                console.log("new pad settings:");
+                console.log(pad_meta);
+                if (pad_meta.radius == "50") {
+                    $("#pad-radius-static").html("Building").fadeIn(1000);
+                } else if (pad_meta.radius == "500") {
+                    $("#pad-radius-static").html("City Block").fadeIn(1000);
+                } else if (pad_meta.radius == "2000") {
+                    $("#pad-radius-static").html("Neighbourhood").fadeIn(1000);
+                } else if (pad_meta.radius == "10000") { 
+                    $("#pad-radius-static").html("City").fadeIn(1000);
+                }
+                console.log(pad_meta.expiry);
+                $("#pad-expiry-static").html("blah").fadeIn(1000);
+                $("#pad-expiry-static").attr("title", pad_meta.expiry);
+                $("#pad-expiry-static").timeago();
+                $("#pad-title").html(pad_meta.name).fadeIn(1000);
             });
+                
 
             socket.on('newpost-notify', function (data) {
                 $("#postlist").prepend($(data).fadeIn(1000));
@@ -127,16 +184,7 @@ block script
 
 
             socket.on('padlist', function (data) {
-                pad_list = data.pads;
-                console.log("pads retrieved near this pad:");
-                console.log(pad_list);
-                $("#pad-selection-dropdown").html("");
-                $("#pad-selection-dropdown").append("<option value='newpad'>New Pad...</option>");
-                for (var p in pad_list) {
-                    $("#pad-selection-dropdown").append(
-                        "<option value='" + pad_list[p].uuid + "'>" + pad_list[p].name + "</option>"
-                    );
-                }
+                // not using this atm!
             });
 
         };

@@ -6,31 +6,29 @@ html
     body
         block titlearea
 
+            .navbar
+                .navbar-inner
+                    header
+                        .sitetitle#app-name
+                            h1#app-name-header 
+                                a#homelink(href="/") Geopad
+                        .sitetitle
+                            h3.subheading
+                                img.header-logo(src="/img/Location-Icon.jpeg")
+                                | Location-specific notepads for yourself and others nearby. 
+                                a#n00b-help-btn(title="help", href="#n00b-help", role="button", data-toggle="modal") [ ? ]
+                            p
+                                small.text-error Warning! 
+                                small.text-warning.
+                                    Alpha software. Your mileage may vary, use at your own risk, etc. 
+                                    <a href="https://github.com/jessykate/geopad/issues" target="blank">Send feedback</a>
+
             #user-map-wrapper
                 #user-map
 
-            header
-
-                .sitetitle#app-name
-                    h1#app-name-header 
-                        a#homelink(href="/") Geopad
-                    
-                .sitetitle
-                    h3.subheading
-                        img.header-logo(src="/img/Location-Icon.jpeg")
-                        | Location-specific notepads for yourself and others nearby. 
-                        a#n00b-help-btn(title="help", href="#n00b-help", role="button", data-toggle="modal") [ ? ]
-                    p
-                        small.text-error Warning! 
-                        small.text-warning.
-                            Alpha software. Your mileage may vary, use at your own risk, etc. 
-                            <a href="https://github.com/jessykate/geopad/issues" target="blank">Send feedback</a>
-
                 #n00b-help.modal.hide.fade 
                     .modal-header
-                        h3 About Geopads
-                        button.close(type="button",data-dismiss="modal", aria-hidden="true")
-                            i.icon-close#help-close
+                        h3 What are Geopads?
                     .modal-body
                         ul
                             li 
@@ -42,22 +40,11 @@ html
 
 
 
-                #newpost-wrapper
-                    form#newpad(action="/api/pad/new/", method="GET")
-                        input#newpad-post(type="input", name="post")(placeholder="Post to new pad")
-                        select#pad-selection-dropdown(name="padid")
-                            option(value="newpad") New Pad...
-                        input(type="hidden", id="newpad-user-lat", name="user_lat", value=null)
-                        input(type="hidden", id="newpad-user-lng", name="user_lng", value=null)
-                        input(type="hidden", id="newpad-user-id", name="user_id", value=null)
-                        input(type="submit", value="Make it So", id="newpost-submit")
-
         // Wrap all page content here
         .container#wrap#page-content
 
             #spinner
                 img(src="/img/ajax_loader_large.gif", alt="Loading...")
-
 
             block content
 
