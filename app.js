@@ -381,7 +381,7 @@ io.sockets.on('connection', function(socket) {
 	});
 	socket.on('owner-query', function(data) {
 		var client = dbconnect();
-		client.query("select exists (select * from membership where userid='"+ data.user_id +"' and padid='"+ data.pad_id+"' and owner=TRUE);", function(err, result) {
+		client.query("select exists (select * from membership where userid='"+ data.user_id +"' and padid='"+ data.pad_id+"' and owner=TRUE) as exists;", function(err, result) {
 			if (!err && result.rows[0].exists == true) {
 				socket.in(data.user_id).emit('owner-proclaim');
 			} else if (err) {
