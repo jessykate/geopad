@@ -64,6 +64,27 @@ block script
                 $("input#expiry").val("");
             });
 
+            socket.on('pad-settings-update', function(pad_meta) {
+                console.log("new pad settings:");
+                console.log(pad_meta);
+                if (pad_meta.radius == "50") {
+                    $("#"+ pad_meta.uuid + " .pad-radius-meta").html("Building ").fadeIn(1000);
+                } else if (pad_meta.radius == "500") {
+                    $("#"+ pad_meta.uuid + " .pad-radius-meta").html("City Block ").fadeIn(1000);
+                } else if (pad_meta.radius == "2000") {
+                    $("#"+ pad_meta.uuid + " .pad-radius-meta").html("Neighbourhood ").fadeIn(1000);
+                } else if (pad_meta.radius == "10000") { 
+                    $("#"+ pad_meta.uuid + " .pad-radius-meta").html("City ").fadeIn(1000);
+                }
+                console.log(pad_meta.expiry);
+                $("#"+ pad_meta.uuid + " .pad-expiry-meta").html("blah").fadeIn(1000);
+                $("#"+ pad_meta.uuid + " .pad-expiry-meta").attr("title", pad_meta.expiry);
+                $("#"+ pad_meta.uuid + " .pad-expiry-meta").timeago();
+
+                $("#"+ pad_meta.uuid + " .pad-name-meta").html(pad_meta.name).fadeIn(1000);
+            });
+                
+
 
         };
 

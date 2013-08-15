@@ -110,7 +110,7 @@ input, button, select {
 	width: 80px;
 }
 
-.fog-meta-name {
+.pad-name-meta {
 	font-size: 30px;
 	font-family: 'Lato', sans-serif;
 	font-weight: 100;
@@ -183,14 +183,15 @@ input[name=pad-expiry] {
 	background-color: rgba(255, 255, 153, 1);
 }
 
+#expiry-wrapper label {
+	display: inline;
+	font-size: 12px;
+}
+
 #radius-wrapper label {
 	display: inline;
+	font-size: 12px;
 }
-
-#radius-wrapper {
-	margin-bottom: 20px;
-}
-
 
 #app-name-header {
 	font-size: 55px;

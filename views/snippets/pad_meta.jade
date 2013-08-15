@@ -1,8 +1,8 @@
-.pad-meta-data
-    h3.fog-meta-name.subheading
-        a.foglink(href="/pad/" + pad.uuid) #{pad.name}
+.pad-meta-data(id="#{pad.uuid}")
+    h3.pad-name-meta.subheading
+        a.padlink(href="/pad/" + pad.uuid) #{pad.name}
 
-    span#pad-radius-in-list 
+    span.pad-radius-meta
         if pad.radius == 50 
             | Building 
         if pad.radius == 500 
@@ -14,7 +14,10 @@
 
     if pad.expiry 
         / Expires 
-        span.relative-date(title="#{pad.expiry}") #{pad.expiry}
+        span.pad-expiry-meta.relative-date(title="#{pad.expiry}") #{pad.expiry}
+    else
+        span.pad-expiry-meta.relative-date(title="#{pad.expiry}") / No Expiry
+
 
     hr
 
