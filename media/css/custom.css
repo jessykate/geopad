@@ -1,6 +1,5 @@
 html, body {
 	height: 100%;
-	/* The html and body elements cannot have any padding or margin. */
 }
 
 /* Wrapper for page content to push down footer */
@@ -34,6 +33,7 @@ html, body {
 body {
 	font-family: 'courier', monospace;
 	font-size: 15px;
+	position: relative;
 }
 
 #homelink {
@@ -47,11 +47,12 @@ h1,h2 {
 
 #pad-page-container {
 	margin-top: 50px;
+	margin-left: 40px;
 }
 
 .container {
 	width: auto;
-	max-width: 680px;
+	max-width: 60%;
 }
 
 .container .credit {
@@ -203,10 +204,17 @@ input[name=pad-expiry] {
 
 #page-content {
 	padding-bottom: 150px;
+	min-height: 600px;
+	position: relative;
+	padding-left: 10%;
 }
 
 #user-map {
-	height: 180px;
+	width: 48%;
+	position: absolute;
+	top:0; 
+	left: -40%;
+	height:100%;
 }
 
 #newpad-post {
@@ -236,6 +244,7 @@ input[name=pad-expiry] {
 }
 
 #user-map-wrapper {
+    /* width: 180px; */
 }
 
 #spinner {
