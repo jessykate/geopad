@@ -167,7 +167,7 @@ app.get("/api/pad/settings", function(req, res) {
 	console.log(data);
 
 	//check if the user is an owner of the pad
-	client.query("select exists (select * from membership where userid='"+ data.query.user_id +"' and padid='"+ data.query.pad_id+"' and owner=TRUE);", function(err, result) {
+	client.query("select exists (select * from membership where userid='"+ data.query.user_id +"' and padid='"+ data.query.pad_id+"' and owner=TRUE) as exists;", function(err, result) {
 		if (!err && result.rows[0].exists != true) {
 			console.log("error. user " + data.query.user_id + " is not an owner of pad " + data.query.pad_id + ".");
 			res.send(500);
