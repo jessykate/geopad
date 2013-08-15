@@ -48,6 +48,8 @@ h1,h2 {
 #pad-page-container {
 	margin-top: 50px;
 	margin-left: 40px;
+	background-color: #FFF;
+	padding: 50px;
 }
 
 .container {
@@ -203,18 +205,20 @@ input[name=pad-expiry] {
 }
 
 #page-content {
-	padding-bottom: 150px;
 	min-height: 600px;
 	position: relative;
-	padding-left: 10%;
 }
 
 #user-map {
-	width: 48%;
+	width: 100%;
 	position: absolute;
 	top:0; 
-	left: -40%;
-	height:100%;
+	left: 0;
+	min-height: 1200px;
+}
+#main-page-padlist-container {
+	background: #FFF;
+	padding: 50px;
 }
 
 #newpad-post {
@@ -244,7 +248,11 @@ input[name=pad-expiry] {
 }
 
 #user-map-wrapper {
-    /* width: 180px; */
+    position: relative;
+}
+
+.leaflet-tile-pane {
+	opacity: 0.4 !important;
 }
 
 #spinner {
