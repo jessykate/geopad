@@ -41,6 +41,9 @@ html
             #user-map
 
         // Wrap all page content here
+        #xs-spacer
+        .clear
+
         .container#wrap#page-content
             #spinner
                 img(src="/img/ajax_loader_large.gif", alt="Loading...")
@@ -62,14 +65,6 @@ html
             $(document).ready(function() {
                 $(".relative-date").timeago();
             });
-
-            $("#newpad").submit(function() {
-                $("#newpad-user-lat").val(page_vars.user_corrected_lat);
-                $("#newpad-user-lng").val(page_vars.user_corrected_lng);
-                $("#newpad-user-id").val(localStorage.geopad_userid);
-                return true;
-            });
-
 
             // Piwik Analytics
             var _paq = _paq || [];

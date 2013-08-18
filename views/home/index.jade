@@ -10,7 +10,7 @@ block content
             input(type="hidden", id="newpad-user-lat", name="user_lat", value=null)
             input(type="hidden", id="newpad-user-lng", name="user_lng", value=null)
             input(type="hidden", id="newpad-user-id", name="user_id", value=null)
-            input.btn.btn-large#newpad-submit(type="submit", value="Create New Pad")
+            input.btn.btn-large#newpad-submit(type="submit", value="New Pad at this Location")
 
     #main-page-padlist-container
         h2#pad-list-title Browse
@@ -20,6 +20,14 @@ block content
 block script
     script.
         
+        $("#newpad").submit(function() {
+            $("#newpad-user-lat").val(page_vars.user_lat);
+            $("#newpad-user-lng").val(page_vars.user_lng);
+            $("#newpad-user-id").val(localStorage.geopad_userid);
+            return true;
+        });
+
+
         // called a single time after the initial position is retrieved. 
         connections_setup = function(user_corrected_lat, user_corrected_lng) {
 
