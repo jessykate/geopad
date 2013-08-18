@@ -1,13 +1,16 @@
 function page_global_vars() { 
-	this.user_corrected_lat = null; 
-	this.user_corrected_lng = null;
 	// initialize map variables
-	this.map = L.map('user-map');
-	this.user_location_marker= L.marker({zIndexOffset: 1000});
-	// load any known user position tweaks from session storage
-	this.user_delta_lat = null;
-	this.user_delta_lng = null;
 
+	this.geoPadIcon = L.icon({
+		    iconUrl: '/img/marker-icon-2x.png',
+		    shadowUrl: '/img/marker-shadow.png',
+		    popupAnchor:  [25, 0] // point from which the popup should open relative to the iconAnchor
+	});
+
+	this.user_lat = null;
+	this.user_lng = null;
+	this.map = L.map('user-map');
+	this.user_location_marker= L.marker();
 	this.map.scrollWheelZoom.disable();
 	L.tileLayer('http://a.tile.stamen.com/toner/{z}/{x}/{y}.png', {
 		attribution: 'Tiles by <a href="http://stamen.com">Stamen Design</a>, <a href="http://creativecommons.org/licenses/by/3.0">CC BY 3.0</a>& <a href="http://openstreetmap.org">OpenStreetMap</a>' }).addTo(this.map);
@@ -23,49 +26,28 @@ function page_global_vars() {
 lng_bnd = function(lng, err) { x = ((lng + 180) + err) % 360 - 180; return x; };
 lat_bnd = function(lat, err) { x = ((lat + 90) + err) % 180 - 90; return x; };
 
-update_user_position_with_tweaks = function(position, page_vars) {
-	// save or update the user's position.
-	// save both the original position returned by the geolocation
-	// API and the delta refinement specified by the user. to begin
-	// with, of course, the two positions are the same, and the
-	// user_delta is 0. saving the user_delta allows us to propagate the user's
-	// corrections continuously whenever the geolocation API refreshes their
-	// location. 
+map_setup = function(position, page_vars) {
 
-	// every time the geolocation api updates, add the user's
-	// tweaks to the position. 
-	page_vars.user_corrected_lat = lat_bnd(position.coords.latitude, page_vars.user_delta_lat);
-	page_vars.user_corrected_lng = lng_bnd(position.coords.longitude, page_vars.user_delta_lng);
+	/* if we want to limit the map bounds, uncomment these lines
+		// use the accuracy parameter of the geolocation API to
+		// calculate rough bounds on the location, and convert this to
+		// an error in degrees. Add some number of meters for flexibility and
+		// convert these to bounds on the map. 
+		var flexibility_factor = 200;
+		var accuracy_degrees = (position.accuracy + flexibility_factor)/111120;
+		console.log("accuracy_degrees: " + accuracy_degrees);
+		var southWestBound = new L.LatLng(lat_bnd(page_vars.user_lat, -accuracy_degrees), lng_bnd(page_vars.user_lng, -accuracy_degrees));
+		var northEastBound = new L.LatLng(lat_bnd(page_vars.user_lat, accuracy_degrees), lng_bnd(page_vars.user_lng, accuracy_degrees));
+		var user_position_uncertainty = new L.LatLngBounds(southWestBound, northEastBound);
+	*/
 
-};
-
-load_saved_user_position_tweaks = function(page_vars) {
-	page_vars.user_delta_lat = parseFloat(sessionStorage.user_delta_lat || 0);
-	page_vars.user_delta_lng = parseFloat(sessionStorage.user_delta_lng || 0);
-};
-
-update_map = function(accuracy, page_vars) {
-
-	// use the accuracy parameter of the geolocation API to
-	// calculate rough bounds on the location, and convert this to
-	// an error in degrees. Add some number of meters for flexibility and
-	// convert these to bounds on the map. 
-	var flexibility_factor = 200;
-	var accuracy_degrees = (accuracy + flexibility_factor)/111120;
-	console.log("accuracy_degrees: " + accuracy_degrees);
-	//var southWestBound = new L.LatLng(lat_bnd(page_vars.user_corrected_lat, -accuracy_degrees), lng_bnd(page_vars.user_corrected_lng, -accuracy_degrees));
-	//var northEastBound = new L.LatLng(lat_bnd(page_vars.user_corrected_lat, accuracy_degrees), lng_bnd(page_vars.user_corrected_lng, accuracy_degrees));
-	//console.log('southwest bound: ' + southWestBound);
-	//console.log('northeast bound: ' + northEastBound);
-	//var user_position_uncertainty = new L.LatLngBounds(southWestBound, northEastBound);
-
-	page_vars.map.setView([page_vars.user_corrected_lat, page_vars.user_corrected_lng], 18);
+	page_vars.map.setView([position.coords.latitude, position.coords.longitude], 18);
 	//page_vars.map.setMaxBounds(user_position_uncertainty);
 
 	// who knows why but the leaflet coordinate system seems to start from the
 	// bottom right. le sigh. 
 	var x_offset = page_vars.map.getSize().x - 100;
-	var y_offset = page_vars.map.getSize().y - 200;
+	var y_offset = page_vars.map.getSize().y - 150;
 	var div_offset = page_vars.map.containerPointToLatLng(
 			new L.Point(x_offset, y_offset));
 	console.log("div offset is:");
@@ -75,28 +57,22 @@ update_map = function(accuracy, page_vars) {
 	// remove the old marker and generate a new one. (XXX should be a better way to do this!)
 	page_vars.map.removeLayer(page_vars.user_location_marker);
 	page_vars.user_location_marker = L.marker(
-		[page_vars.user_corrected_lat, page_vars.user_corrected_lng], 
-		{draggable: true}
+		[position.coords.latitude, position.coords.longitude], 
+		{draggable: true, icon: page_vars.geoPadIcon}
 	).addTo(page_vars.map);
 
-	page_vars.user_location_marker.bindPopup("Drag the pin to fine-tune<br>your location.").openPopup();
+	page_vars.user_location_marker.bindPopup("Drag the pin to fine-tune<br>your location, and browse or<br>create nearby pads.").openPopup();
 	page_vars.user_location_marker.on('dragend', function(event) {
-		var updated_latlng = event.target.getLatLng();
-		var new_user_delta_lat = updated_latlng.lat - page_vars.user_corrected_lat;
-		var new_user_delta_lng = updated_latlng.lng - page_vars.user_corrected_lng;
-		// update the session storage value
-		sessionStorage.user_delta_lat = new_user_delta_lat;
-		sessionStorage.user_delta_lng = new_user_delta_lng;
+		var new_loc = event.target.getLatLng();
+		page_vars.user_lat = new_loc.lat;
+		page_vars.user_lng = new_loc.lng;
 
-		// update the actual user position values used for
-		// calculations, new pad creation, etc. 
-		page_vars.user_corrected_lat = updated_latlng.lat;
-		page_vars.user_corrected_lng = updated_latlng.lng;
-
+		// re-open the marker popup
+		page_vars.user_location_marker.openPopup();
 		// this has to be inside this callback! in order to be triggered by the
 		// dragging of the location marker
-		retrieve_nearby_pads(page_vars.user_corrected_lat, page_vars.user_corrected_lng);
-		console.log('updated user position to: ' + page_vars.user_corrected_lat + ", " + page_vars.user_corrected_lng);
+		retrieve_nearby_pads(new_loc.lat, new_loc.lng);
+		console.log('updated user position to: ' + new_loc.lat + ", " + new_loc.lng);
 	})
 
 };
@@ -104,7 +80,7 @@ update_map = function(accuracy, page_vars) {
 /* Once we know the location and have joined the socket room through which the
  * response will be sent, nearby pads can be retrieved (response is sent via
  * sockets, not ajax, so there is no response code here.) */
-retrieve_nearby_pads = function(user_corrected_lat, user_corrected_lng) {
+retrieve_nearby_pads = function(user_lat, user_lng) {
 	// wire up the ajax-y spinning animated GIF when an ajax call is made.
 	$('#spinner').ajaxStart(function () {
 		$(this).fadeIn('fast');
@@ -114,7 +90,7 @@ retrieve_nearby_pads = function(user_corrected_lat, user_corrected_lng) {
 
 	console.log("retrieving nearby pads...");
 	request = $.ajax({
-		data: {user_lat: user_corrected_lat, user_lng: user_corrected_lng, user_id: localStorage.geopad_userid},
+		data: {user_lat: user_lat, user_lng: user_lng, user_id: localStorage.geopad_userid},
 		type: "GET",
 		contentType: "application/json",
 		url: "/api/pads/nearby/"
@@ -132,21 +108,11 @@ get_or_create_random_identity = function() {
 	}
 }
 
-// called every time the geolocation api succeeds
 geo_success_callback = function(position, page_vars) {
-
-	update_user_position_with_tweaks(position, page_vars);
-	
-	// logging
-	console.log("raw geolocation position: " + position.coords.latitude, position.coords.longitude);
-	console.log("user deltas: " + page_vars.user_delta_lat + ", " + page_vars.user_delta_lng);
-	console.log("corrected user location set to (" + page_vars.user_corrected_lat + "," + page_vars.user_corrected_lng + ") to accuracy of " + position.coords.accuracy);
-
-	// Update the displayed map by retricting it to bounds roughly
-	// representing the accuracy (or inaccuracy) of the user-specified
-	// position.
-	update_map(position.coords.accuracy, page_vars);
-
+	page_vars.user_lat = position.coords.latitude;
+	page_vars.user_lng = position.coords.longitude;
+	console.log("initial user position obtained: " + page_vars.user_lat, page_vars.user_lng);
+	map_setup(position, page_vars);
 };
 
 geo_error = function(error) {
@@ -156,19 +122,14 @@ geo_error = function(error) {
 // called once from the calling page
 geolocation_launch = function(connections_setup_fn, page_vars) {
 
-	load_saved_user_position_tweaks(page_vars);
-
-	// the geo_success callback given to the geolocation API passes the
-	// position object by default. we need to pass in more arguments, so these
-	// wrappers do the trick. 
+	/* the geo_success callback given to the geolocation API passes the
+	 position object by default. we need to pass in more arguments, so these
+	 wrappers do the trick.  */
 	geo_success_initial = function(position) {
-		// update the user position and map
+		// set the user position and initialize the map
 		geo_success_callback(position, page_vars);
-		// set up the local page connections
-		connections_setup_fn(page_vars.user_corrected_lat, page_vars.user_corrected_lng);
-	};
-	geo_success_subsequent = function(position) {
-		geo_success_callback(position, page_vars);
+		// set up the local page socket connections and callbacks
+		connections_setup_fn(page_vars.user_lat, page_vars.user_lng);
 	};
 
 	// get the position once when the page is called. 

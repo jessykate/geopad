@@ -179,11 +179,11 @@ input[name=pad-expiry] {
 }
 
 #expiry-options > label:hover {
-	background-color: rgba(255, 255, 153, 1);
+	background-color: #BCBCBC;
 }
 
 #radius-options > label:hover {
-	background-color: rgba(255, 255, 153, 1);
+	background-color: #BCBCBC;
 }
 
 #expiry-wrapper label {
@@ -221,8 +221,21 @@ input[name=pad-expiry] {
 	padding: 50px;
 }
 
+#newpad {
+	margin-bottom: 60px;
+}
+
+@media (max-width: 980px) {
+	#xs-spacer {
+		height: 250px;
+		width: 100%;
+		z-index: -10;
+	}
+}
+
+
+
 #newpad-post {
-	margin-right: 15px;
 	margin-top: 50px;
 	margin-bottom: 20px;
 	width: 100%;
@@ -236,7 +249,7 @@ input[name=pad-expiry] {
 
 #newpad-submit {
 	margin-bottom: 0px;
-	display: block;
+	white-space: normal;
 }
 
 #n00b-help-btn {
@@ -295,7 +308,6 @@ header {
 
 #newpost-wrapper {
 	font-size: 20px;
-	margin-right: 50px;
 	margin-top: 10px;
 }
 
@@ -311,7 +323,7 @@ header {
 
 [contenteditable="true"]:hover { 
 	outline: 2px dashed #0090D2; 
-	background-color: rgba(255, 255, 153, 1);
+	background-color: #BCBCBC;
 }
 
 .leaflet-popup-content-wrapper {
