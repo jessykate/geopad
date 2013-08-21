@@ -59,7 +59,7 @@ app.locals.domain = config.domain;
  * * * * * * * * * * * * * * * * * * * * * */
 
 // check for expired pads every hour on the 1st minute
-hourly = '00 01 * * * *';
+hourly = '00 06 * * * *';
 expiry_watch = new cronJob(hourly, function() {
 	console.log("checking for expired pads... ");
 	var client = dbconnect();
@@ -78,12 +78,16 @@ expiry_watch = new cronJob(hourly, function() {
 					console.log("a pad expiring this hour:");
 					console.log(pad);
 					if (pad.expiry <= now ) {
+						var client = dbconnect();
 						client.query("delete from active where uuid='" + pad.uuid + "';");
+						client.end();
 					} else {
 						var at_expiry_time = pad.expiry;
 						console.log("scheduling expiry of pad " + pad.uuid + " at " + at_expiry_time);
 						new cronJob(at_expiry_time, function() {
+							var client = dbconnect();
 							client.query("delete from active where uuid='" + pad.uuid + "';");
+							client.end();
 						}, true);
 					}
 				}
