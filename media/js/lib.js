@@ -130,6 +130,19 @@ geolocation_launch = function(connections_setup_fn, page_vars) {
 		geo_success_callback(position, page_vars);
 		// set up the local page socket connections and callbacks
 		connections_setup_fn(page_vars.user_lat, page_vars.user_lng);
+
+		// the map size and marker positions need to be recalculated if the page is resized.
+		var resizeTimer;
+        $(window).resize(function() {
+			if (resizeTimer) {
+				clearTimeout(resizeTimer);   // clear any previous pending timer
+			}
+			// set new timer
+			resizeTimer = setTimeout(function() {
+				resizeTimer = null;
+				map_setup(position, page_vars);
+			}, 500); // number in milliseconds
+        });
 	};
 
 	// get the position once when the page is called. 
