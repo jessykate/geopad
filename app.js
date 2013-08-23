@@ -79,6 +79,7 @@ expiry_watch = new cronJob(hourly, function() {
 					console.log(pad);
 					if (pad.expiry <= now ) {
 						var client = dbconnect();
+						console.log("expiring pad " + pad.uuid);
 						client.query("delete from active where uuid='" + pad.uuid + "';");
 						client.end();
 					} else {
