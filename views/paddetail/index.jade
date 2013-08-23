@@ -40,6 +40,7 @@ block content
 block script
     script.
 
+        console.log("#{pad.name}");
         $("#newpost").submit(function() {		
             formdata = {
                 pad_id: $("input#pad-uuid").val(),
@@ -82,7 +83,7 @@ block script
             var user_room_success_string = "join-success-"+ localStorage.geopad_userid;
             socket.on(user_room_success_string, function() {
                 console.log("welcome. retrieving nearby pads...")
-                retrieve_nearby_pads(page_vars.user_corrected_lat, page_vars.user_corrected_lng);
+                retrieve_nearby_pads(page_vars.user_lat, page_vars.user_lng);
                 socket.emit('owner-query', {'user_id': localStorage.geopad_userid, 'pad_id': "#{pad.uuid}"});
             });
 

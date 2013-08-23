@@ -351,6 +351,8 @@ app.get("/pad/:padid", function(req, res) {
 			client.query("SELECT * FROM pad_" + padid + " ORDER BY created DESC;", function(err, result) {
 				if (!err) {
 					var posts = result.rows;
+					console.log("pad details: ");
+					console.log(pad);
 					res.render('paddetail', {pad: pad, posts: posts});
 				} else {
 					console.log(err);
