@@ -12,8 +12,12 @@ html, body {
 }
 
 /* Set the fixed height of the footer here */
-#push, #footer {
-	height: 155px;
+#static-footer {
+	height: 200px;
+	position: fixed;
+	bottom: 0;
+	left: 0;
+	width: 100%;
 }
 
 #footer {
@@ -50,6 +54,7 @@ h1,h2 {
 	margin-left: 40px;
 	background-color: #FFF;
 	padding: 50px;
+	margin-bottom: 250px;
 }
 
 .container {
@@ -161,29 +166,33 @@ input[name=pad-expiry] {
 }
 
 #radius-options label {
-	padding-right: 10px;
+	padding: 5px;
+	margin-right: 10px;
+}
+
+#radius-options input, #expiry-options input {
+	display: none;
 }
 
 #radius-options :checked + label {
-	text-decoration: underline;
-	color: #333;
+	background-color: #C0D2FF;
 }
 
 #expiry-options :checked + label {
-	text-decoration: underline;
-	color: #333;
+	background-color: #C0D2FF;
 }
 
 #expiry-options label {
-	padding-right: 10px;
+	margin-right: 10px;
+	padding: 5px;
 }
 
 #expiry-options > label:hover {
-	background-color: #BCBCBC;
+	background-color: #7FA0F5;
 }
 
 #radius-options > label:hover {
-	background-color: #BCBCBC;
+	background-color: #7FA0F5;
 }
 
 #expiry-wrapper label {
@@ -211,32 +220,46 @@ input[name=pad-expiry] {
 
 #user-map {
 	width: 100%;
+	height: 100%;
 	position: absolute;
 	top:0; 
 	left: 0;
-	min-height: 1200px;
+	-webkit-box-shadow: 0px -3px 15px 0 #7FA0F5;
 }
+
+.new-pad-link-action {
+	color: inherit;
+	text-decoration: none;
+	color: #AAA;
+}
+
+.new-pad-link-action:hover {
+	color: inherit;
+	cursor: pointer;
+	text-decoration: underline;
+}
+
+#radius-options, #expiry-options, #location-check-wrapper {
+	line-height: 200%;
+}
+
+#location-check-label {
+	padding-right: 20px;
+}
+
 #main-page-padlist-container {
 	background: #FFF;
 	padding: 50px;
+	margin-bottom: 250px;
 }
 
 #newpad {
 	margin-bottom: 60px;
 }
 
-@media (max-width: 980px) {
-	#xs-spacer {
-		height: 250px;
-		width: 100%;
-		z-index: -10;
-	}
-}
-
-
 
 #newpad-post {
-	margin-top: 50px;
+	margin-top: 20px;
 	margin-bottom: 20px;
 	width: 100%;
 	height: 100px;
@@ -260,12 +283,8 @@ input[name=pad-expiry] {
 	text-decoration:none;
 }
 
-#user-map-wrapper {
-    position: relative;
-}
-
 .leaflet-tile-pane {
-	opacity: 0.4 !important;
+	//opacity: 0.4 !important;
 }
 
 #spinner {
@@ -283,7 +302,8 @@ input[name=pad-expiry] {
 }
 
 #pad-title {
-	font-weight: normal;
+	margin-top: 20px;
+	line-height: 30px;
 }
 
 #action-bar {
@@ -304,11 +324,13 @@ header {
 	margin-right: 10px;
 	height: 100px;
 	margin-bottom: 50px;
+	margin-top: 50px;
 }
 
 #newpost-wrapper {
-	font-size: 20px;
+	/* font-size: 20px; */
 	margin-top: 10px;
+	display: none;
 }
 
 .navbar {

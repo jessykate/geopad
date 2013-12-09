@@ -37,10 +37,13 @@ block content
         for post in posts
             include ../snippets/post_detail
 
+    #static-footer
+        #user-map-wrapper
+            #user-map
 block script
     script.
 
-        console.log("#{pad.name}");
+        console.log("pad name: #{pad.uuid}");
         $("#newpost").submit(function() {		
             formdata = {
                 pad_id: $("input#pad-uuid").val(),
@@ -82,8 +85,8 @@ block script
 
             var user_room_success_string = "join-success-"+ localStorage.geopad_userid;
             socket.on(user_room_success_string, function() {
-                console.log("welcome. retrieving nearby pads...")
-                retrieve_nearby_pads(page_vars.user_lat, page_vars.user_lng);
+                console.log("welcome. checking ownership...")
+                //retrieve_nearby_pads(page_vars.user_lat, page_vars.user_lng);
                 socket.emit('owner-query', {'user_id': localStorage.geopad_userid, 'pad_id': "#{pad.uuid}"});
             });
 
@@ -131,7 +134,8 @@ block script
                         '<label for="expiry-month">[1 month]</label>' +
                         
                         '<input type="radio" name="pad-expiry" id="expiry-none" value="0">' +
-                        '<label for="expiry-none">[No Expiry]</label>'
+                        '<label for="expiry-none">[No Expiry]</label>' +
+                        '</span>'
                 );
 
                 if (!"#{pad.expiry}") {

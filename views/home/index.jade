@@ -4,22 +4,63 @@ block content
 
     #newbinfo
     
-    #newpost-wrapper
-        form.form-inline#newpad(action="/api/pad/new/", method="GET")
-            textarea#newpad-post(name="post",placeholder="Write a Post...")
-            input(type="hidden", id="newpad-user-lat", name="user_lat", value=null)
-            input(type="hidden", id="newpad-user-lng", name="user_lng", value=null)
-            input(type="hidden", id="newpad-user-id", name="user_id", value=null)
-            input.btn.btn-large#newpad-submit(type="submit", value="New Pad at this Location")
-
     #main-page-padlist-container
-        h2#pad-list-title Browse
+        h2#pad-list-title Browse | 
+            a.new-pad-link-action New Pad at this Location
+
+        #newpost-wrapper
+            form.form-inline#newpad(action="/api/pad/new/", method="GET")
+                input(type="text", id="newpad-title", name="title",placeholder="Pad Title")
+                textarea#newpad-post(name="post",placeholder="Post contents")
+                input(type="hidden", id="newpad-user-lat", name="user_lat", value=null)
+                input(type="hidden", id="newpad-user-lng", name="user_lng", value=null)
+                input(type="hidden", id="newpad-user-id", name="user_id", value=null)
+
+                span#radius-options What Size? 
+                    input(type="radio",name="radius",value="50",id="radius_building", checked=true)
+                    label(for="radius_building")[Building]
+                        
+                    input(type="radio",name="radius",value="500",id="radius_cityblock")
+                    label(for="radius_cityblock")[City Block]
+                        
+                    input(type="radio",name="radius",value="2000",id="radius_neighbourhood")
+                    label(for="radius_neighbourhood")[Neighbourhood]
+                        
+                    input(type="radio",name="radius",value="10000",id="radius_city")
+                    label(for="radius_city")[City]
+
+                br 
+                span#expiry-options When Should it Expire? 
+                    input(type="radio",name="expiry",id="expiry-day",value="24", checked=true)
+                    label(for="expiry-day")[1 day] 
+                    
+                    input(type="radio",name="expiry",id="expiry-week",value="168")
+                    label(for="expiry-week")[1 week]
+                    
+                    input(type="radio",name="expiry",id="expiry-month",value="744")
+                    label(for="expiry-month")[1 month]
+                    
+                    input(type="radio",name="expiry",id="expiry-none",value="0")
+                    label(for="expiry-none")[No Expiry]
+                br
+                span#location-check-wrapper
+                    label#location-check-label(for="location-check") Double-check your location is correct?
+                    input(type="checkbox",required=true, id="location-check") 
+                br
+                input.btn.btn-large#newpad-submit(type="submit", value="Make it So")
+
         #pad-error			
         #padlist Searching for nearby pads...
 
+        
+    #static-footer
+        #user-map-wrapper
+            #user-map
+
+
 block script
     script.
-        
+
         $("#newpad").submit(function() {
             $("#newpad-user-lat").val(page_vars.user_lat);
             $("#newpad-user-lng").val(page_vars.user_lng);
@@ -57,6 +98,14 @@ block script
                 pads_created = [];
                 
                 $("#padlist").html(pad_html);
+
+                // set the callback after the padlist has been added to the
+                // html, so we can attach it to a link in the injected text as
+                // well (which will be present if there are no nearby pads). 
+                $(".new-pad-link-action").click(function(e) {
+                    $("#newpost-wrapper").slideToggle();
+                    return false;
+                });
             });
 
             socket.on('newpad-notify', function (data) {

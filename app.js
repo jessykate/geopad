@@ -239,17 +239,19 @@ app.get("/api/pad/new", function(req, res) {
 	var client = dbconnect();
 	console.log("in /api/pad/new/...");
 	var data = url.parse(req.url, true);
+	console.log(data);
 
-	var default_radius_meters = 50;
-	var default_expiry_hours = 24;
+	var newpad_title = data.query.title;
+	var newpad_radius_meters = parseInt(data.query.radius);
+	var newpad_expiry_hours = parseInt(data.query.expiry);
 	
 	var expiry_timestamp = new Date();
-	expiry_timestamp.setHours(expiry_timestamp.getHours() + default_expiry_hours);
+	expiry_timestamp.setHours(expiry_timestamp.getHours() + newpad_expiry_hours);
 	console.log(expiry_timestamp);
 
 	// because our lat and long are stored in degrees, we need to convert the
 	// radius in degrees too. 
-	var radius_degrees = default_radius_meters/METERS_TO_DEGREES;
+	var radius_degrees = newpad_radius_meters/METERS_TO_DEGREES;
 	// we'll get pad metadata either from a newly created pad or an existing one. 
 	var pad_meta, the_uuid;
 
@@ -258,7 +260,7 @@ app.get("/api/pad/new", function(req, res) {
 	console.log("creating new pad id: " + the_uuid);
 	// create an entry in the pad metadata table for this pad
 	var padmeta_insert_string = "INSERT INTO pad_meta (uuid, created, updated, name, origin, radius, area, expiry, creator) VALUES ($1, now(), now(), $2, ST_GeomFromText('POINT(" + data.query.user_lng + " " + data.query.user_lat + ")', 4326), $3, ST_Buffer(ST_GeomFromText('POINT(" + data.query.user_lng + " " + data.query.user_lat + ")', 4326), $4), $5, $6) RETURNING name, uuid, creator, radius, expiry";
-	var padmeta_insert_args = [the_uuid, "untitled", default_radius_meters, radius_degrees, expiry_timestamp, data.query.user_id]
+	var padmeta_insert_args = [the_uuid, newpad_title, newpad_radius_meters, radius_degrees, expiry_timestamp, data.query.user_id]
 		
 	client.query(padmeta_insert_string, padmeta_insert_args, function(err, result) {
 		if (!err) {
@@ -346,8 +348,6 @@ app.get("/pad/:padid", function(req, res) {
 			if (pad.expiry) {
 				pad.expiry = pad.expiry.toFormat("YYYY-MM-DDTHH24:MI:SS");
 			}
-			console.log("obtained pad metadata:");
-			console.log(pad);
 			client.query("SELECT * FROM pad_" + padid + " ORDER BY created DESC;", function(err, result) {
 				if (!err) {
 					var posts = result.rows;

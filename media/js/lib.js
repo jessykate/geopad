@@ -12,7 +12,7 @@ function page_global_vars() {
 	this.map = L.map('user-map');
 	this.user_location_marker= L.marker();
 	this.map.scrollWheelZoom.disable();
-	L.tileLayer('http://a.tile.stamen.com/toner/{z}/{x}/{y}.png', {
+	L.tileLayer('http://a.www.toolserver.org/tiles/bw-mapnik/{z}/{x}/{y}.png', {
 		attribution: 'Tiles by <a href="http://stamen.com">Stamen Design</a>, <a href="http://creativecommons.org/licenses/by/3.0">CC BY 3.0</a>& <a href="http://openstreetmap.org">OpenStreetMap</a>' }).addTo(this.map);
 }
 
@@ -41,11 +41,12 @@ map_setup = function(position, page_vars) {
 		var user_position_uncertainty = new L.LatLngBounds(southWestBound, northEastBound);
 	*/
 
-	page_vars.map.setView([position.coords.latitude, position.coords.longitude], 18);
+	page_vars.map.setView([position.coords.latitude, position.coords.longitude], 17);
 	//page_vars.map.setMaxBounds(user_position_uncertainty);
 
 	// who knows why but the leaflet coordinate system seems to start from the
 	// bottom right. le sigh. 
+	/*
 	var x_offset = page_vars.map.getSize().x - 100;
 	var y_offset = page_vars.map.getSize().y - 150;
 	var div_offset = page_vars.map.containerPointToLatLng(
@@ -53,6 +54,7 @@ map_setup = function(position, page_vars) {
 	console.log("div offset is:");
 	console.log(div_offset);
 	page_vars.map.panTo(div_offset, 18);
+	*/
 
 	// remove the old marker and generate a new one. (XXX should be a better way to do this!)
 	page_vars.map.removeLayer(page_vars.user_location_marker);
@@ -61,7 +63,7 @@ map_setup = function(position, page_vars) {
 		{draggable: true, icon: page_vars.geoPadIcon}
 	).addTo(page_vars.map);
 
-	page_vars.user_location_marker.bindPopup("Drag the pin to fine-tune<br>your location, and browse or<br>create nearby pads.").openPopup();
+	page_vars.user_location_marker.bindPopup("Drag the pin to fine-tune<br>your location.").openPopup();
 	page_vars.user_location_marker.on('dragend', function(event) {
 		var new_loc = event.target.getLatLng();
 		page_vars.user_lat = new_loc.lat;
